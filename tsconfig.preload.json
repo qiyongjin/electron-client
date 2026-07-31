@@ -1,0 +1,44 @@
+{
+    "compilerOptions": {
+        "composite": true,
+        "target": "ES2020",
+        "module": "CommonJS",
+        "lib": [
+            "ES2020",
+            "DOM"
+        ],
+        "outDir": "dist/preload",
+        "rootDir": "./src",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "moduleResolution": "node",
+        "allowSyntheticDefaultImports": true,
+        /* Path Mapping */
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "./src/preload/*"
+            ],
+            "@shared/*": [
+                "./src/shared/*"
+            ],
+            "@main/*": [
+                "./src/main/*"
+            ],
+            "@renderer/*": [
+                "./src/renderer/*"
+            ]
+        }
+    },
+    "include": [
+        "src/preload/**/*",
+        "src/shared/**/*"  // 添加这一行
+    ],
+    "exclude": [
+        "src/main",
+        "src/renderer",
+        "node_modules",
+    ]
+}
