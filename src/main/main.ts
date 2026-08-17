@@ -1,8 +1,11 @@
 import { app, BrowserWindow, Menu } from 'electron';
-import { join } from 'path';
 import { createMainWindow } from './windowManager.js';
 import { setupIpcHandlers } from './ipc/mainIpc.js';
+import path from 'path';  
+import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // 保持窗口对象的全局引用
 let mainWindow: BrowserWindow | null = null;
@@ -21,7 +24,17 @@ app.whenReady().then(() => {
     }
 
     if (!app.isPackaged) {
-      mainWindow.setIcon("C:\\Users\\Administrator\\Desktop\\python\\electron-client\\build\\icon.png");
+      console.log("-----------", __dirname)
+      const iconPath = path.join(__dirname, '../../../', 'build', 'icon.png');
+      // 针对 macOS 设置 Dock 图标
+      if (process.platform === 'darwin') {
+         app.dock?.setIcon(iconPath);
+      } 
+      // 针对 Windows/Linux 保留窗口图标
+      else {
+        mainWindow.setIcon(iconPath);
+      }
+      mainWindow.setIcon(iconPath);
     }
   } catch (error) {
     console.error('❌ Error creating window:', error); // 添加这行

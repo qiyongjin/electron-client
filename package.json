@@ -18,13 +18,14 @@
     "build:preload": "tsc -p tsconfig.preload.json",
     "dist": "cross-env NODE_ENV=production npm run build:all && electron-builder --publish=never",
     "dist:all": "npm run build:all && electron-builder -mwl --publish=never",
+    "dist:win": "npm run build:all && electron-builder --win --publish=never",
     "dist:wl": "npm run build:all && electron-builder -wl --publish=never",
     "dist:linux": "npm run build:all && electron-builder --linux --publish=never",
     "dist:mac": "npm run build:all && electron-builder --mac --publish=never"
   },
   "build": {
     "appId": "com.mini.seven",
-    "productName": "AiPyPro七",
+    "productName": "mini_seven",
     "directories": {
       "output": "release"
     },
@@ -51,9 +52,9 @@
       "icon": "build/icon.png"
     },
     "win": {
-      "target": "portable",
-      "icon": "build/icon.png",
-      "executableName": "AiPyPro七",
+      "target": "nsis",
+      "icon": "build/icon.ico",
+      "executableName": "mini_seven",
       "artifactName": "${name}-${version}-${arch}.${ext}"
     },
     "linux": {

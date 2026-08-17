@@ -18,7 +18,7 @@ export function createMainWindow(): BrowserWindow {
       nodeIntegration: false,
       contextIsolation: true,
       preload: preloadPath,
-      webSecurity: false // 生产环境可能需要这个
+      webSecurity: isDev // 禁用浏览器的同源策略（CORS 限制），允许你的渲染进程随意请求任何跨域资源  
     },
     show: false,
   };
