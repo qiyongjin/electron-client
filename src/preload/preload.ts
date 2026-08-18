@@ -13,6 +13,8 @@ export interface ElectronAPI {
 console.log('✅ Preload script loaded');
 
 // 向渲染进程暴露安全的 API
+
+
 contextBridge.exposeInMainWorld('electronAPI', {
   readFile: (filePath: string) => ipcRenderer.invoke('file:read', filePath),
   writeFile: (filePath: string, content: string) => 
@@ -20,4 +22,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   minimize: () => ipcRenderer.invoke('app:minimize'),
   maximize: () => ipcRenderer.invoke('app:maximize'),
   close: () => ipcRenderer.invoke('app:close'),
+  ping: () => ipcRenderer.invoke('ping'),
 } as ElectronAPI);

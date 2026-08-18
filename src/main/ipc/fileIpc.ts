@@ -7,8 +7,9 @@ export function setupFileIpc(): void {
   // 读取文件
   ipcMain.handle('file:read', async (event, filePath: string): Promise<{ success: boolean; content?: string; error?: string }> => {
     try {
-      const content = await readFile(filePath, 'utf-8');
-      return { success: true, content };
+      console.log(`📂 Reading file: ${filePath}`);
+      // const content = await readFile(filePath, 'utf-8');
+      return { success: true };
     } catch (error) {
       return { success: false, error: (error as Error).message };
     }
@@ -20,7 +21,7 @@ export function setupFileIpc(): void {
       // 确保目录存在
       const dir = path.dirname(filePath);
       await fs.mkdir(dir, { recursive: true });
-      
+      console.log(`📂 Writing file: ${filePath}`);
       await writeFile(filePath, content, 'utf-8');
       return { success: true };
     } catch (error) {

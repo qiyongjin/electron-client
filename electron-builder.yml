@@ -1,0 +1,180 @@
+# 应用唯一标识符；安装、签名和自动更新会使用它，发布后应保持不变。
+appId: com.mini.seven
+# 面向用户显示的产品名，也会影响默认安装目录和部分产物名称。
+productName: mini_seven
+directories:
+  # 本地打包产物输出目录。package.json 使用 --publish=never 时，产物只会保存在这里，不会上传。
+  output: release
+# 要打入应用的文件规则；! 开头的模式表示排除。
+files:
+  # 排除开发编辑器配置，避免无关文件进入安装包。
+  - '!**/.vscode/*'
+  # 排除源码；它应已由构建流程输出为可运行文件。
+  - '!src/*'
+  # 排除项目文档和本地包目录。
+  - '!docs/*'
+  - '!pkgs/*'
+  # 排除内嵌 Python 应用的开发、测试、版本控制和文档文件，减小包体积。
+  - '!resources/aipyapp/{.venv,.coverage,.github,DISCLAIMER.md,coverage.xml,docs,pytest.ini,tests,.dockerignore,.gitignore,LICENSE,README.zh.md,dev,examples,run_tests.sh,.DS_Store,.git,Makefile,docker,Showcase,.gitlab-ci.yml}'
+  # 排除开发期构建与质量工具配置。
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  # 排除环境变量、npm 配置和锁文件，避免泄漏配置且减小体积。
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  # 排除其余项目、打包、预览和开发代理配置。
+  - '!jsconfig.json'
+  - '!electron-builder.*.yml'
+  - '!preview.vite.config.mjs'
+  - '!resources/config/**'
+  - '!extra_resources/**'
+  - '!patches/**'
+  - '!AGENTS.md'
+# app.asar 中需要排除的资源；与 win.asar: true 搭配，供外部程序直接读取或执行。
+asarUnpack:
+  # resources 下的文件保留在 asar 外部，便于运行时按路径访问。
+  - resources/**
+
+# 额外复制到应用 resources 目录的运行时资源；适合需要以真实路径访问的文件。
+extraResources:
+  # 扩展资源：从源目录复制到安装后的 resources/extensions。
+  # - from: extra_resources/extensions/
+    # to: extensions
+  # 角色资源：从源目录复制到安装后的 resources/characters。
+  # - from: extra_resources/characters/
+    # to: characters
+
+# 额外复制到应用内容根目录的文件；与 extraResources 的目标位置不同。
+extraFiles:
+  # 示例数据会被复制为应用内容根目录下的 demo_data。
+  # - from: extra_resources/demo
+    # to: demo_data
+    # 仅应用于当前来源目录的排除规则。
+    filter:
+      - '!互联网审计季报/**'
+      - '!nodecrypt/**'
+
+# 注册自定义 URL 协议（如 mini_seven://...）；主进程还需处理相关打开事件。
+protocols:
+  # 协议显示名称。
+  - name: "mini_seven"
+    # 实际协议前缀；当前有重复值，通常保留一个即可，除非用于兼容旧配置。
+    schemes: ["mini_seven", "mini_seven"]
+
+# 签名后钩子，通常用于 macOS 公证；与 mac.notarize: true 及 Apple 凭据配合。
+# afterSign: build/scripts/notarize.mjs
+# 打包完成后钩子，适合对已打包内容做补充、修正或校验。
+# afterPack: build/scripts/after-pack.mjs
+
+# Windows 平台专用配置。
+win:
+  # Windows 应用图标；取消注释并提供 .ico 文件后生效。
+  # icon: "build/icons/newyear/icon.ico"
+  # Windows 独有资源；可补充顶层 extraResources。
+  extraResources:
+    # 沙箱启动器与 DLL 会被复制到 resources/sandbox/bin；两者须保留同目录以便 DLL 加载。
+    # - from: src/sandbox/bin
+      # to: sandbox/bin
+      # 只复制列出的运行时文件。
+      filter:
+        # - launcher.exe
+        # - sandbox.dll
+    # - from: extra_resources/sandbox/windows/policy.yaml
+      # 策略会复制为 resources/sandbox/policy.yaml，需与应用读取路径保持一致。
+      # to: sandbox/policy.yaml
+  # Windows 安装包格式；选择 nsis 后，下方 nsis 配置才会生效。
+  target:
+    - target: nsis
+  # 是否将应用内容归档为 app.asar；需把运行时必须直接访问的资源列入顶层 asarUnpack。
+  # asar: true
+  # 压缩等级；normal 平衡构建速度与包体积。
+  compression: normal
+  # 是否校验自动更新包的代码签名；false 会跳过校验，应确保更新源的安全性。
+  verifyUpdateCodeSignature: false
+  # 主可执行文件名（不含 .exe）。
+  executableName: mini_seven
+  # Windows 产物命名模板；变量在构建时替换。
+  artifactName: ${name}-${version}-${arch}.${ext}
+  # 修改可执行文件的资源后重新签名；需与签名脚本、有效证书配合。
+  # signAndEditExecutable: true
+  # Windows 签名工具配置。
+  # signtoolOptions:
+    # 自定义签名脚本，供 electron-builder 调用。
+    # sign: ./build/scripts/win-sign.js
+
+# NSIS 安装器配置；仅在 win.target 含 nsis 时生效。
+nsis:
+  # 安装器图标；取消注释并提供 .ico 文件后生效。
+  # installerIcon: "build/icons/newyear/icon.ico"
+  # 卸载器图标；通常与 installerIcon 采用同一品牌图标。
+  # uninstallerIcon: "build/icons/newyear/icon.ico"
+  # false 显示安装向导；true 则一键安装，并通常不让用户选目录。
+  oneClick: false
+  # true 为所有用户安装，需管理员权限；与企业部署和目录权限策略相关。
+  perMachine: true
+  # 允许改安装目录；只有 oneClick: false 时才有实际作用。
+  allowToChangeInstallationDirectory: true
+  # 快捷方式名称；引用顶层 productName。
+  shortcutName: ${productName}
+  # Windows“应用和功能”的卸载条目名称；引用顶层 productName。
+  uninstallDisplayName: ${productName}
+  # 是否创建桌面快捷方式。
+  createDesktopShortcut: false
+  # 自定义 NSIS 脚本；启用后需与 electron-builder 的 NSIS 宏兼容。
+  # include: build/installer.nsh
+
+# macOS 平台专用配置。
+mac:
+  # macOS 应用图标；取消注释并提供 .icns 文件后生效。
+  # icon: "build/icons/newyear/icon.icns"
+  # 提交 Apple 公证服务；需与 afterSign 脚本、Apple Developer 凭据和 hardenedRuntime 一起配置。
+  notarize: true
+  # Finder/Launchpad 使用的应用分类标识。
+  category: public.app-category.utilities
+  # macOS 产物目标；default 按 electron-builder 的默认规则生成。
+  target:
+    target: default
+  # 签名类型；distribution 用于分发构建，通常要求 Developer ID 证书。
+  type: distribution
+  # 开启 Hardened Runtime；Apple 公证必需，若申请受限能力还要配置 entitlements。
+  hardenedRuntime: true
+  # 主应用权限声明；启用特定 macOS 能力时取消注释并配置该文件。
+  # entitlements: build/entitlements.mac.plist
+  # 内嵌 Helper 的继承权限；通常与 entitlements 同时设置。
+  # entitlementsInherit: build/entitlements.mac.plist
+  # 追加到 macOS Info.plist 的字段；麦克风权限说明是系统弹出授权请求所必需的。
+  extendInfo:
+    NSMicrophoneUsageDescription: AiPy需要使用麦克风进行实时语音对话。
+  # 是否在构建期间执行 Gatekeeper 评估；false 不替代发布前的签名和公证验证。
+  gatekeeperAssess: false
+  # macOS 产物命名模板；与 win.artifactName 独立生效。
+  artifactName: ${name}-${version}-${arch}.${ext}
+
+# Linux 平台专用配置。
+linux:
+  # Linux 打包目标；AppImage 是可携带的单文件应用格式。
+  target:
+    - AppImage
+  # Linux 包元数据中的维护者标识。
+  maintainer: aipy.app
+  # Linux 桌面菜单分类。
+  category: Utility
+
+# AppImage 专用配置；仅在 linux.target 包含 AppImage 时生效。
+appImage:
+  # AppImage 产物命名模板。
+  artifactName: ${name}-${version}-${arch}.${ext}
+
+# 是否重建原生 Node 模块；false 适用于原生依赖已在其他流程中匹配目标 Electron ABI 的项目。
+npmRebuild: false
+
+# 自动更新源配置。--publish=never 只禁止构建时上传，不影响应用运行时从此地址检查更新。
+publish:
+  # 通用 HTTP(S) 更新提供方；服务端需提供 electron-updater 所需的 latest*.yml 和安装包。
+  provider: generic
+  # 更新文件基础地址；需和实际上传的各平台产物名称一致。
+  url: https://dl.aipyaipy.com/downloads/
+
+# Electron 二进制下载配置，仅影响构建期下载，不影响运行时更新。
+# electronDownload:
+  # 构建期下载 Electron 的镜像地址；适合官方源访问受限或较慢的网络环境。
+  # mirror: https://npmmirror.com/mirrors/electron/

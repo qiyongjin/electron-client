@@ -18,56 +18,10 @@
     "build:preload": "tsc -p tsconfig.preload.json",
     "dist": "cross-env NODE_ENV=production npm run build:all && electron-builder --publish=never",
     "dist:all": "npm run build:all && electron-builder -mwl --publish=never",
-    "dist:win": "npm run build:all && electron-builder --win --publish=never",
+    "dist:win": "npm run build:all && electron-builder --win --publish=never --config electron-builder.yml",
     "dist:wl": "npm run build:all && electron-builder -wl --publish=never",
     "dist:linux": "npm run build:all && electron-builder --linux --publish=never",
     "dist:mac": "npm run build:all && electron-builder --mac --publish=never"
-  },
-  "build": {
-    "appId": "com.mini.seven",
-    "productName": "mini_seven",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "!dist/**/*.map",
-      "node_modules/**/*",
-      "package.json"
-    ],
-    "extraResources": [
-      {
-        "from": "dist/renderer",
-        "to": "dist/renderer"
-      }
-    ],
-    "asar": true,
-    "compression": "normal",
-    "mac": {
-      "category": "public.app-category.productivity",
-      "target": [
-        "dmg",
-        "zip"
-      ],
-      "icon": "build/icon.png"
-    },
-    "win": {
-      "target": "nsis",
-      "icon": "build/icon.ico",
-      "executableName": "mini_seven",
-      "artifactName": "${name}-${version}-${arch}.${ext}"
-    },
-    "linux": {
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "icon": "build/icon.png"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    }
   },
   "devDependencies": {
     "@electron-forge/plugin-vite": "^7.11.2",

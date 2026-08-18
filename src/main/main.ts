@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Menu } from 'electron';
 import { createMainWindow } from './windowManager.js';
 import { setupIpcHandlers } from './ipc/mainIpc.js';
+import { setupFileIpc } from './ipc/fileIpc.js';
 import path from 'path';  
 import { fileURLToPath } from 'url';
 
@@ -17,6 +18,7 @@ app.whenReady().then(() => {
   try {
     mainWindow = createMainWindow();
     setupIpcHandlers();
+    setupFileIpc()
     
     // 开发环境下打开开发者工具
     if (process.env.NODE_ENV === 'development') {
