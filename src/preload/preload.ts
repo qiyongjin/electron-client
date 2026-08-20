@@ -22,5 +22,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   minimize: () => ipcRenderer.invoke('app:minimize'),
   maximize: () => ipcRenderer.invoke('app:maximize'),
   close: () => ipcRenderer.invoke('app:close'),
+  getPrimaryDisplay: () => ipcRenderer.invoke('screen:getPrimaryDisplay'),
+  getWindowClose: () => ipcRenderer.invoke('window:close'),
   ping: () => ipcRenderer.invoke('ping'),
+  showMessageBox: (options: any) => ipcRenderer.invoke('dialog:showMessageBox', options),
+  getPath: (event: any, path: string) => ipcRenderer.invoke('app:getPath', event, path),
+
 } as ElectronAPI);

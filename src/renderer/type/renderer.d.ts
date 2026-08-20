@@ -25,3 +25,24 @@ declare module '*.svg' {
   const value: string;
   export default value;
 }
+
+import type { IpcChannels } from '../../shared/types/ipc';
+
+declare global {
+  interface Window {
+    electronAPI: {
+      readFile: IpcChannels['file:read'];
+      writeFile: IpcChannels['file:write'];
+      ping: IpcChannels['ping'];
+      minimize: IpcChannels['window:minimize'];
+      maximize: IpcChannels['window:maximize'];
+      close: IpcChannels['window:close'];
+      getPrimaryDisplay: IpcChannels['screen:getPrimaryDisplay'];
+      getWindowClose: IpcChannels['window:close'];
+      showMessageBox: IpcChannels['dialog:showMessageBox'];
+      getPath: IpcChannels['app:getPath'];
+    };
+  }
+}
+
+export {};

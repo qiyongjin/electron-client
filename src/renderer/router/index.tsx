@@ -1,6 +1,8 @@
 import { createBrowserRouter } from "react-router-dom"
 import HomeComponent from "../pages/HomeComponent"
+import HomeTest from "../pages/HomeTest"
 import BroadCast from "../pages/BroadCast"
+
 
 // 错误边界组件
 function ErrorBoundary() {
@@ -18,6 +20,11 @@ function ErrorBoundary() {
 const routers = [
     {
         path: "/",
+        element: <HomeTest />,
+        errorElement: <ErrorBoundary />
+    },
+    {
+        path: "/home",
         element: <HomeComponent />,
         errorElement: <ErrorBoundary />
     },
