@@ -55,6 +55,8 @@ declare global {
       
       // 工具
       ping: IpcChannels['ping'];
+      aipyappRequest: IpcChannels['aipyapp:request'];
+      aipyappOnMessage: IpcChannels['aipyapp:onMessage'];
     };
   }
 }

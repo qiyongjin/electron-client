@@ -44,4 +44,11 @@ export interface IpcChannels {
   
   // 工具
   'ping': () => string;
+  'aipyapp:request': (payload: unknown) => Promise<{
+    success: boolean;
+    message?: string;
+    data?: unknown;
+    error?: string;
+  }>;
+  'aipyapp:onMessage': (callback: (message: unknown) => void) => () => void;
 }

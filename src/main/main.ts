@@ -4,6 +4,7 @@ import { setupIpcHandlers } from './ipc/mainIpc.js';
 import { setupFileIpc } from './ipc/fileIpc.js';
 import { setupWindowIpc } from './ipc/windowIpc.js';
 import { setupAppIpc } from './ipc/appIpc.js';
+import { setupAipyappProcessIpc } from './ipc/aipyapp-process.js';
 import path from 'path';  
 import { fileURLToPath } from 'url';
 
@@ -24,6 +25,7 @@ app.whenReady().then(() => {
     setupFileIpc();
     setupWindowIpc();
     setupAppIpc();
+    setupAipyappProcessIpc();
     
     // 开发环境下打开开发者工具
     if (process.env.NODE_ENV === 'development') {
@@ -31,7 +33,6 @@ app.whenReady().then(() => {
     }
 
     if (!app.isPackaged) {
-      console.log("-----------", __dirname)
       const iconPath = path.join(__dirname, '../../../', 'build', 'icon.png');
       // 针对 macOS 设置 Dock 图标
       if (process.platform === 'darwin') {

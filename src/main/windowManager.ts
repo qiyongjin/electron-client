@@ -15,7 +15,7 @@ export function createMainWindow(): BrowserWindow {
     minWidth: 800,
     minHeight: 600,
     webPreferences: {
-      nodeIntegration: false,
+      nodeIntegration: false,  // 避免渲染进程直接访问 Node.js
       contextIsolation: true,
       preload: preloadPath,
       webSecurity: isDev // 禁用浏览器的同源策略（CORS 限制），允许你的渲染进程随意请求任何跨域资源  

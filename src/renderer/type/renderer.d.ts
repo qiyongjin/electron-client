@@ -41,6 +41,9 @@ declare global {
       getWindowClose: IpcChannels['window:close'];
       showMessageBox: IpcChannels['dialog:showMessageBox'];
       getPath: IpcChannels['app:getPath'];
+
+      aipyappRequest: IpcChannels["aipyapp:request"];
+      aipyappOnMessage: IpcChannels["aipyapp:onMessage"];
     };
   }
 }
