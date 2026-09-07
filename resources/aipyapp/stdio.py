@@ -5,10 +5,12 @@ import sys
 from typing import Any
 import time
 
+from openai import chat
+
 
 def respond(payload: dict[str, Any]) -> None:
     """向 Electron 写入一条响应，并立即刷新缓冲区。"""
-    print(json.dumps(payload, ensure_ascii=True), flush=True)
+    print(json.dumps(payload, ensure_ascii=False), flush=True)
 
 
 def handle_request(request: Any) -> dict[str, Any]:
@@ -18,6 +20,8 @@ def handle_request(request: Any) -> dict[str, Any]:
     action = request.get("action", "ping")
     if action == "ping":
         return {"success": True, "done": True, "message": "aipyapp stdio backend is running"}
+    if action == "chat":
+        return chat(request, respond)
     if action == "message":
         for index in range(20):
             # stream=True 表示这是一条进度消息，不会结束 Electron 的 invoke 请求。
@@ -30,6 +34,9 @@ def handle_request(request: Any) -> dict[str, Any]:
 
 
 def main() -> None:
+    for stream in (sys.stdin, sys.stdout):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     for line in sys.stdin:
         if not line.strip():
             continue
