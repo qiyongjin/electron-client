@@ -2,7 +2,8 @@
   "name": "mini_seven",
   "version": "1.0.0",
   "type": "module",
-  "description": "",
+  "description": "个人桌面端",
+  "author": "Y <qyjai@outlook.com> (https://qyjai.com/>)",
   "main": "dist/main/main/main.js",
   "scripts": {
     "dev": "cross-env NODE_ENV=development npm run build:all && concurrently \"npm run serve:renderer\" \"npm run start-electron\"",
@@ -21,7 +22,7 @@
     "dist:win": "npm run build:all && electron-builder --win --publish=never --config electron-builder.yml",
     "dist:wl": "npm run build:all && electron-builder -wl --publish=never",
     "dist:linux": "npm run build:all && electron-builder --linux --publish=never",
-    "dist:mac": "npm run build:all && electron-builder --mac --publish=never"
+    "dist:mac": "npm run build:all && electron-builder --mac --publish=never --config electron-builder.yml"
   },
   "devDependencies": {
     "@electron-forge/plugin-vite": "^7.11.2",

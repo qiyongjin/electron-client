@@ -12,23 +12,23 @@ files:
   # 排除源码；它应已由构建流程输出为可运行文件。
   - '!src/*'
   # 排除项目文档和本地包目录。
-  - '!docs/*'
-  - '!pkgs/*'
-  # 排除内嵌 Python 应用的开发、测试、版本控制和文档文件，减小包体积。
-  - '!resources/aipyapp/{.venv,.coverage,.github,DISCLAIMER.md,coverage.xml,docs,pytest.ini,tests,.dockerignore,.gitignore,LICENSE,README.zh.md,dev,examples,run_tests.sh,.DS_Store,.git,Makefile,docker,Showcase,.gitlab-ci.yml}'
-  # 排除开发期构建与质量工具配置。
-  - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
-  # 排除环境变量、npm 配置和锁文件，避免泄漏配置且减小体积。
-  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
-  # 排除其余项目、打包、预览和开发代理配置。
-  - '!jsconfig.json'
-  - '!electron-builder.*.yml'
-  - '!preview.vite.config.mjs'
-  - '!resources/config/**'
-  - '!extra_resources/**'
-  - '!patches/**'
-  - '!AGENTS.md'
+  # - '!docs/*'
+  # - '!pkgs/*'
+  # # 排除内嵌 Python 应用的开发、测试、版本控制和文档文件，减小包体积。
+  # - '!resources/aipyapp/{.venv,.coverage,.github,DISCLAIMER.md,coverage.xml,docs,pytest.ini,tests,.dockerignore,.gitignore,LICENSE,README.zh.md,dev,examples,run_tests.sh,.DS_Store,.git,Makefile,docker,Showcase,.gitlab-ci.yml}'
+  # # 排除开发期构建与质量工具配置。
+  # - '!electron.vite.config.{js,ts,mjs,cjs}'
+  # - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  # # 排除环境变量、npm 配置和锁文件，避免泄漏配置且减小体积。
+  # - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  # # 排除其余项目、打包、预览和开发代理配置。
+  # - '!jsconfig.json'
+  # - '!electron-builder.*.yml'
+  # - '!preview.vite.config.mjs'
+  # - '!resources/config/**'
+  # - '!extra_resources/**'
+  # - '!patches/**'
+  # - '!AGENTS.md'
 # app.asar 中需要排除的资源；与 win.asar: true 搭配，供外部程序直接读取或执行。
 asarUnpack:
   # resources 下的文件保留在 asar 外部，便于运行时按路径访问。
@@ -50,8 +50,8 @@ extraFiles:
     # to: demo_data
     # 仅应用于当前来源目录的排除规则。
     filter:
-      - '!互联网审计季报/**'
-      - '!nodecrypt/**'
+      # - '!互联网审计季报/**'
+      # - '!nodecrypt/**'
 
 # 注册自定义 URL 协议（如 mini_seven://...）；主进程还需处理相关打开事件。
 protocols:
@@ -168,11 +168,11 @@ appImage:
 npmRebuild: false
 
 # 自动更新源配置。--publish=never 只禁止构建时上传，不影响应用运行时从此地址检查更新。
-publish:
+# publish:
   # 通用 HTTP(S) 更新提供方；服务端需提供 electron-updater 所需的 latest*.yml 和安装包。
-  provider: generic
+  # provider: generic
   # 更新文件基础地址；需和实际上传的各平台产物名称一致。
-  url: https://dl.aipyaipy.com/downloads/
+  # url: https://dl.aipyaipy.com/downloads/
 
 # Electron 二进制下载配置，仅影响构建期下载，不影响运行时更新。
 # electronDownload:
