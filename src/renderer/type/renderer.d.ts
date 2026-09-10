@@ -44,6 +44,7 @@ declare global {
 
       aipyappRequest: IpcChannels["aipyapp:request"];
       aipyappOnMessage: IpcChannels["aipyapp:onMessage"];
+      aipyappCancel: IpcChannels['aipyapp:cancel'];
     };
   }
 }

@@ -49,6 +49,11 @@ export interface IpcChannels {
     message?: string;
     data?: unknown;
     error?: string;
+    request_id?: string;
+    stream?: boolean;
+    done?: boolean;
+    cancelled?: boolean;
   }>;
+  'aipyapp:cancel': (requestId: string) => Promise<{ success: boolean; cancelled: boolean }>;
   'aipyapp:onMessage': (callback: (message: unknown) => void) => () => void;
 }

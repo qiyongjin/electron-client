@@ -1,7 +1,8 @@
-import { createBrowserRouter } from "react-router-dom"
+import { createHashRouter, Navigate } from "react-router-dom"
 import HomeComponent from "../pages/HomeComponent"
 import HomeTest from "../pages/HomeTest"
 import BroadCast from "../pages/BroadCast"
+import ChatPage from "../pages/ChatPage"
 
 
 // 错误边界组件
@@ -20,6 +21,21 @@ function ErrorBoundary() {
 const routers = [
     {
         path: "/",
+        element: <Navigate to="/chatPage" replace />,
+        errorElement: <ErrorBoundary />
+    },
+    {
+        path: "/chatPage",
+        element: <ChatPage />,
+        errorElement: <ErrorBoundary />
+    },
+    {
+        path: "/chat",
+        element: <Navigate to="/chatPage" replace />,
+        errorElement: <ErrorBoundary />
+    },
+    {
+        path: "/test",
         element: <HomeTest />,
         errorElement: <ErrorBoundary />
     },
@@ -35,4 +51,5 @@ const routers = [
     }
 ]
 
-export const router = createBrowserRouter(routers)
+// Hash routes also work when the packaged Electron app loads index.html through file://.
+export const router = createHashRouter(routers)

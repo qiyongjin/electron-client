@@ -10,8 +10,8 @@ export function createMainWindow(): BrowserWindow {
   const preloadPath = join(__dirname, '../../preload/preload/preload.js');
   
   const options: BrowserWindowConstructorOptions = {
-    width: 600,
-    height: 600,
+    width: 1180,
+    height: 820,
     minWidth: 800,
     minHeight: 600,
     webPreferences: {

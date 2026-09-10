@@ -1,16 +1,6 @@
-// import {router} from './router/index'
-// import { RouterProvider } from 'react-router-dom'
-// import HomeComponent from "./pages/HomeComponent"
-import HomeTest from "./pages/HomeTest"
+import { RouterProvider } from 'react-router-dom';
+import { router } from './router';
 
-
-function App() {
-
-  return (
-    <>
-      <HomeTest />
-    </>
-  )
+export default function App() {
+  return <RouterProvider router={router} />;
 }
-
-export default App

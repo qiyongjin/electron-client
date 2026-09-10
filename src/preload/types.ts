@@ -57,6 +57,7 @@ declare global {
       ping: IpcChannels['ping'];
       aipyappRequest: IpcChannels['aipyapp:request'];
       aipyappOnMessage: IpcChannels['aipyapp:onMessage'];
+      aipyappCancel: IpcChannels['aipyapp:cancel'];
     };
   }
 }

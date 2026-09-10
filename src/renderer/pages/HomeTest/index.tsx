@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 const HomeTest = () =>{
 
     const Test = async () => {
@@ -15,7 +16,7 @@ const HomeTest = () =>{
     }
 
     useEffect(() => {
-        window.electronAPI.aipyappOnMessage((response) => {
+        return window.electronAPI?.aipyappOnMessage((response) => {
             console.log('Aipyapp message received', response)
         })
     }, [])
@@ -24,6 +25,7 @@ const HomeTest = () =>{
 
     return (
         <div className="w-full p-3">
+            <Link to="/chatPage" className="block mb-4 text-green-700">← 返回小七对话</Link>
             <button onClick={()=>Test()}>测试</button>
             <button onClick={()=>window?.electronAPI?.getWindowClose()}>窗口关闭</button>
             <button onClick={()=>window?.electronAPI?.showMessageBox({ title: '测试', message: '这是一个测试弹窗' })}>打开弹窗</button>

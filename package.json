@@ -6,6 +6,7 @@
   "author": "Y <qyjai@outlook.com> (https://qyjai.com/>)",
   "main": "dist/main/main/main.js",
   "scripts": {
+    "typecheck:renderer": "tsc -p tsconfig.renderer.json --noEmit",
     "dev": "cross-env NODE_ENV=development npm run build:all && concurrently \"npm run serve:renderer\" \"npm run start-electron\"",
     "build:all": "npm run build:renderer && npm run build:electron:dev",
     "serve:renderer": "vite dev",

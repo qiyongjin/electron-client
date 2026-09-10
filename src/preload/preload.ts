@@ -11,6 +11,7 @@ export interface ElectronAPI {
   close: () => void;
   aipyappRequest: (payload: unknown) => Promise<unknown>;
   aipyappOnMessage: (callback: (message: unknown) => void) => () => void;
+  aipyappCancel: (requestId: string) => Promise<{ success: boolean; cancelled: boolean }>;
 }
 console.log('✅ Preload script loaded');
 
@@ -30,6 +31,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   showMessageBox: (options: any) => ipcRenderer.invoke('dialog:showMessageBox', options),
   getPath: (event: any, path: string) => ipcRenderer.invoke('app:getPath', event, path),
   aipyappRequest: (payload: unknown) => ipcRenderer.invoke('aipyapp:request', payload),
+  aipyappCancel: (requestId: string) => ipcRenderer.invoke('aipyapp:cancel', requestId),
   aipyappOnMessage: (callback: (message: unknown) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, message: unknown) => callback(message);
     ipcRenderer.on('aipyapp:message', listener);
