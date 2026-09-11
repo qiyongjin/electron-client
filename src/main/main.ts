@@ -4,7 +4,7 @@ import { setupIpcHandlers } from './ipc/mainIpc.js';
 import { setupFileIpc } from './ipc/fileIpc.js';
 import { setupWindowIpc } from './ipc/windowIpc.js';
 import { setupAppIpc } from './ipc/appIpc.js';
-import { setupAipyappProcessIpc } from './ipc/aipyapp-process.js';
+import { setupSevenappProcessIpc } from './ipc/sevenapp-process.js';
 import path from 'path';  
 import { fileURLToPath } from 'url';
 
@@ -25,7 +25,7 @@ app.whenReady().then(() => {
     setupFileIpc();
     setupWindowIpc();
     setupAppIpc();
-    setupAipyappProcessIpc();
+    setupSevenappProcessIpc();
     
     // 开发环境下打开开发者工具
     if (process.env.NODE_ENV === 'development') {

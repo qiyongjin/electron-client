@@ -1,9 +1,9 @@
 """OpenAI 兼容接口调试，无第三方依赖（避免本文件与 openai SDK 同名冲突）。
 
 在下方填写 API_KEY、BASE_URL 常量后运行：
-    python resources/aipyapp/openai.py --model "你的模型名" --prompt "你好"
-    python resources/aipyapp/openai.py --model "你的模型名" --prompt "你好" --no-stream
-    python resources/aipyapp/openai.py --workers 20 --tasks 100 --rounds 3 --no-stream
+    python resources/sevenapp/openai.py --model "你的模型名" --prompt "你好"
+    python resources/sevenapp/openai.py --model "你的模型名" --prompt "你好" --no-stream
+    python resources/sevenapp/openai.py --workers 20 --tasks 100 --rounds 3 --no-stream
 
 多线程测试使用单个进程，最多 workers 个请求并发执行；每轮 tasks 个独立
 对话，重复 rounds 轮。Windows 汇总包含进程内存，供比较多轮变化。

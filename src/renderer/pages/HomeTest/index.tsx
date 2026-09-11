@@ -11,13 +11,13 @@ const HomeTest = () =>{
     }
 
     const handlePing = async (action: string) => {
-        const result = await window.electronAPI.aipyappRequest({ action });
+        const result = await window.electronAPI.sevenappRequest({ action });
         console.log('Ping response', result)
     }
 
     useEffect(() => {
-        return window.electronAPI?.aipyappOnMessage((response) => {
-            console.log('Aipyapp message received', response)
+        return window.electronAPI?.sevenappOnMessage((response) => {
+            console.log('Sevenapp message received', response)
         })
     }, [])
     

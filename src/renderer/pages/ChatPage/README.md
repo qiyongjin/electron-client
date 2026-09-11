@@ -15,9 +15,9 @@
 
 ## 当前后端能力
 
-通过已有的 `electronAPI.aipyappRequest({ action: 'chat', request_id, messages, stream: true })` 调用 `resources/aipyapp/openai.py`，沿用其模型配置。浏览器中可预览布局，发送需要 Electron preload 桥接。
+通过已有的 `electronAPI.sevenappRequest({ action: 'chat', request_id, messages, stream: true })` 调用 `resources/sevenapp/openai.py`，沿用其模型配置。浏览器中可预览布局，发送需要 Electron preload 桥接。
 
-主进程为增量和完成响应附加 `request_id`；渲染层订阅后再发起请求，只接收当前请求的事件。`aipyappCancel(requestId)` 校验窗口归属，取消排队请求或结束正在执行该请求的 Python 进程；后续请求自动启动新进程，旧进程的迟到事件不会污染新请求。
+主进程为增量和完成响应附加 `request_id`；渲染层订阅后再发起请求，只接收当前请求的事件。`sevenappCancel(requestId)` 校验窗口归属，取消排队请求或结束正在执行该请求的 Python 进程；后续请求自动启动新进程，旧进程的迟到事件不会污染新请求。
 
 当前没有云端文件上传、PDF/OCR、知识库检索、图片生成或通用工具执行接口。附件适配器使用 FileReader 读取 UTF-8 的 TXT、MD、CSV、JSON（最多 5 个，每个 1 MB 且不超过 40,000 字符），把全文加入模型上下文，显示真实读取结果。接入上传服务时可替换 `useFileUpload`，保持附件组件接口。未来的工具执行和引用事件可在 `useChatStream` 中映射到 `ChatMessage.toolCalls` / `citations`，组件无需改写。
 

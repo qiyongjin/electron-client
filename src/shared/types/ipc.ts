@@ -44,7 +44,7 @@ export interface IpcChannels {
   
   // 工具
   'ping': () => string;
-  'aipyapp:request': (payload: unknown) => Promise<{
+  'sevenapp:request': (payload: unknown) => Promise<{
     success: boolean;
     message?: string;
     data?: unknown;
@@ -54,6 +54,6 @@ export interface IpcChannels {
     done?: boolean;
     cancelled?: boolean;
   }>;
-  'aipyapp:cancel': (requestId: string) => Promise<{ success: boolean; cancelled: boolean }>;
-  'aipyapp:onMessage': (callback: (message: unknown) => void) => () => void;
+  'sevenapp:cancel': (requestId: string) => Promise<{ success: boolean; cancelled: boolean }>;
+  'sevenapp:onMessage': (callback: (message: unknown) => void) => () => void;
 }

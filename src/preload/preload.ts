@@ -9,9 +9,9 @@ export interface ElectronAPI {
   minimize: () => void;
   maximize: () => void;
   close: () => void;
-  aipyappRequest: (payload: unknown) => Promise<unknown>;
-  aipyappOnMessage: (callback: (message: unknown) => void) => () => void;
-  aipyappCancel: (requestId: string) => Promise<{ success: boolean; cancelled: boolean }>;
+  sevenappRequest: (payload: unknown) => Promise<unknown>;
+  sevenappOnMessage: (callback: (message: unknown) => void) => () => void;
+  sevenappCancel: (requestId: string) => Promise<{ success: boolean; cancelled: boolean }>;
 }
 console.log('✅ Preload script loaded');
 
@@ -30,12 +30,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ping: () => ipcRenderer.invoke('ping'),
   showMessageBox: (options: any) => ipcRenderer.invoke('dialog:showMessageBox', options),
   getPath: (event: any, path: string) => ipcRenderer.invoke('app:getPath', event, path),
-  aipyappRequest: (payload: unknown) => ipcRenderer.invoke('aipyapp:request', payload),
-  aipyappCancel: (requestId: string) => ipcRenderer.invoke('aipyapp:cancel', requestId),
-  aipyappOnMessage: (callback: (message: unknown) => void) => {
+  sevenappRequest: (payload: unknown) => ipcRenderer.invoke('sevenapp:request', payload),
+  sevenappCancel: (requestId: string) => ipcRenderer.invoke('sevenapp:cancel', requestId),
+  sevenappOnMessage: (callback: (message: unknown) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, message: unknown) => callback(message);
-    ipcRenderer.on('aipyapp:message', listener);
-    return () => ipcRenderer.removeListener('aipyapp:message', listener);
+    ipcRenderer.on('sevenapp:message', listener);
+    return () => ipcRenderer.removeListener('sevenapp:message', listener);
   },
 
 } as ElectronAPI);

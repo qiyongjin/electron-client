@@ -5,7 +5,7 @@ import path from 'node:path';
 import readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
 
-export interface AipyappResponse {
+export interface SevenappResponse {
   success: boolean;
   message?: string;
   data?: unknown;
@@ -20,7 +20,7 @@ let backend: ChildProcessWithoutNullStreams | undefined;
 interface PendingRequest {
   payload: unknown;
   requestId?: string;
-  resolve: (response: AipyappResponse) => void;
+  resolve: (response: SevenappResponse) => void;
   reject: (error: Error) => void;
   sender?: WebContents;
 }
@@ -32,13 +32,13 @@ function getBackendScriptPath(): string {
   // 开发时 main 入口位于 dist/main/main/ipc，不能依赖 app.getAppPath()
   // （它会指向 dist/main/main，而不是项目根目录）。
   const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
-  const developmentPath = path.resolve(currentDirectory, '../../../../resources/aipyapp/stdio.py');
+  const developmentPath = path.resolve(currentDirectory, '../../../../resources/sevenapp/stdio.py');
   if (!app.isPackaged) return developmentPath;
   const packagedPath = path.join(
     process.resourcesPath,
     'app.asar.unpacked',
     'resources',
-    'aipyapp',
+    'sevenapp',
     'stdio.py',
   );
 
@@ -60,9 +60,9 @@ function startBackend(): ChildProcessWithoutNullStreams {
   if (backend && !backend.killed) return backend;
 
   const scriptPath = getBackendScriptPath();
-  if (!existsSync(scriptPath)) throw new Error(`找不到 aipyapp 后端文件: ${scriptPath}`);
+  if (!existsSync(scriptPath)) throw new Error(`找不到 sevenapp 后端文件: ${scriptPath}`);
 
-  const pythonCommand = process.env.AIPYAPP_PYTHON ?? (process.platform === 'win32' ? 'python' : 'python3');
+  const pythonCommand = process.env.SEVENAPP_PYTHON ?? (process.platform === 'win32' ? 'python' : 'python3');
   const child = spawn(pythonCommand, ['-u', scriptPath], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
   backend = child;
 
@@ -72,9 +72,9 @@ function startBackend(): ChildProcessWithoutNullStreams {
     if (!request) return;
 
     try {
-      const response = { ...JSON.parse(line), request_id: request.requestId } as AipyappResponse;
+      const response = { ...JSON.parse(line), request_id: request.requestId } as SevenappResponse;
       if (request.sender && !request.sender.isDestroyed()) {
-        request.sender.send('aipyapp:message', response);
+        request.sender.send('sevenapp:message', response);
       }
       if (response.done) {
         activeRequest = undefined;
@@ -82,16 +82,16 @@ function startBackend(): ChildProcessWithoutNullStreams {
         dispatchNextRequest();
       }
     } catch {
-      failBackend(child, new Error('aipyapp 返回了无效 JSON'));
+      failBackend(child, new Error('sevenapp 返回了无效 JSON'));
     }
   });
 
-  child.stderr.on('data', (chunk: Buffer) => console.error(`[aipyapp] ${chunk.toString().trim()}`));
+  child.stderr.on('data', (chunk: Buffer) => console.error(`[sevenapp] ${chunk.toString().trim()}`));
   child.on('error', (error) => {
-    failBackend(child, new Error(`无法启动 aipyapp 后端: ${error.message}`));
+    failBackend(child, new Error(`无法启动 sevenapp 后端: ${error.message}`));
   });
   child.on('exit', (code, signal) => {
-    failBackend(child, new Error(`aipyapp 后端已退出 (code=${code}, signal=${signal})`));
+    failBackend(child, new Error(`sevenapp 后端已退出 (code=${code}, signal=${signal})`));
   });
 
   return child;
@@ -114,7 +114,7 @@ function dispatchNextRequest(): void {
   }
 }
 
-export function sendAipyappRequest(payload: unknown, sender?: WebContents): Promise<AipyappResponse> {
+export function sendSevenappRequest(payload: unknown, sender?: WebContents): Promise<SevenappResponse> {
   return new Promise((resolve, reject) => {
     if (shuttingDown) { reject(new Error('应用正在关闭')); return; }
     const requestId = typeof payload === 'object' && payload !== null && 'request_id' in payload
@@ -124,9 +124,16 @@ export function sendAipyappRequest(payload: unknown, sender?: WebContents): Prom
   });
 }
 
-export function cancelAipyappRequest(requestId: string, sender: WebContents): { success: boolean; cancelled: boolean } {
+/**
+ * 取消 sevenapp 请求
+ * @param requestId 请求 ID
+ * @param sender 发送者
+ * @returns 取消结果
+ * 
+ */
+export function cancelSevenappRequest(requestId: string, sender: WebContents): { success: boolean; cancelled: boolean } {
   const matches = (request: PendingRequest) => request.requestId === requestId && request.sender?.id === sender.id;
-  const response: AipyappResponse = { success: true, done: true, cancelled: true, request_id: requestId };
+  const response: SevenappResponse = { success: true, done: true, cancelled: true, request_id: requestId };
   if (activeRequest && matches(activeRequest)) {
     const request = activeRequest;
     activeRequest = undefined;
@@ -155,17 +162,17 @@ function stopBackend(): void {
   while (pendingRequests.length) pendingRequests.shift()?.reject(new Error('应用正在关闭'));
 }
 
-/** 注册供渲染进程调用的 aipyapp 后端 IPC。 */
-export function setupAipyappProcessIpc(): void {
-  ipcMain.handle('aipyapp:request', (event, payload: unknown) => sendAipyappRequest(payload, event.sender));
-  ipcMain.handle('aipyapp:cancel', (event, requestId: unknown) => {
+/** 注册供渲染进程调用的 sevenapp 后端 IPC。 */
+export function setupSevenappProcessIpc(): void {
+  ipcMain.handle('sevenapp:request', (event, payload: unknown) => sendSevenappRequest(payload, event.sender));
+  ipcMain.handle('sevenapp:cancel', (event, requestId: unknown) => {
     if (typeof requestId !== 'string' || !requestId) throw new Error('无效的聊天请求 ID');
-    return cancelAipyappRequest(requestId, event.sender);
+    return cancelSevenappRequest(requestId, event.sender);
   });
   app.once('before-quit', stopBackend);
 
   // 应用启动时就拉起并确认后端；后续请求会复用同一个进程。
-  void sendAipyappRequest({ action: 'ping' }).catch((error: Error) => {
-    console.error(`[aipyapp] 后端启动失败: ${error.message}`);
+  void sendSevenappRequest({ action: 'ping' }).catch((error: Error) => {
+    console.error(`[sevenapp] 后端启动失败: ${error.message}`);
   });
 }

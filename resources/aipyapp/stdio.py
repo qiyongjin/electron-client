@@ -19,7 +19,7 @@ def handle_request(request: Any) -> dict[str, Any]:
 
     action = request.get("action", "ping")
     if action == "ping":
-        return {"success": True, "done": True, "message": "aipyapp stdio backend is running"}
+        return {"success": True, "done": True, "message": "sevenapp stdio backend is running"}
     if action == "chat":
         return chat(request, respond)
     if action == "message":

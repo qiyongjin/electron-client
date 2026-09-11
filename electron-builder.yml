@@ -15,7 +15,7 @@ files:
   # - '!docs/*'
   # - '!pkgs/*'
   # # 排除内嵌 Python 应用的开发、测试、版本控制和文档文件，减小包体积。
-  # - '!resources/aipyapp/{.venv,.coverage,.github,DISCLAIMER.md,coverage.xml,docs,pytest.ini,tests,.dockerignore,.gitignore,LICENSE,README.zh.md,dev,examples,run_tests.sh,.DS_Store,.git,Makefile,docker,Showcase,.gitlab-ci.yml}'
+  # - '!resources/sevenapp/{.venv,.coverage,.github,DISCLAIMER.md,coverage.xml,docs,pytest.ini,tests,.dockerignore,.gitignore,LICENSE,README.zh.md,dev,examples,run_tests.sh,.DS_Store,.git,Makefile,docker,Showcase,.gitlab-ci.yml}'
   # # 排除开发期构建与质量工具配置。
   # - '!electron.vite.config.{js,ts,mjs,cjs}'
   # - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'

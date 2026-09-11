@@ -42,9 +42,9 @@ declare global {
       showMessageBox: IpcChannels['dialog:showMessageBox'];
       getPath: IpcChannels['app:getPath'];
 
-      aipyappRequest: IpcChannels["aipyapp:request"];
-      aipyappOnMessage: IpcChannels["aipyapp:onMessage"];
-      aipyappCancel: IpcChannels['aipyapp:cancel'];
+      sevenappRequest: IpcChannels["sevenapp:request"];
+      sevenappOnMessage: IpcChannels["sevenapp:onMessage"];
+      sevenappCancel: IpcChannels['sevenapp:cancel'];
     };
   }
 }

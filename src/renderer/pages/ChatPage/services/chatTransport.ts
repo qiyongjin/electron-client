@@ -12,15 +12,15 @@ export interface StreamEvent {
 }
 
 export interface ChatBridge {
-  aipyappRequest: (payload: unknown) => Promise<unknown>;
-  aipyappOnMessage: (callback: (message: unknown) => void) => () => void;
-  aipyappCancel: (requestId: string) => Promise<unknown>;
+  sevenappRequest: (payload: unknown) => Promise<unknown>;
+  sevenappOnMessage: (callback: (message: unknown) => void) => () => void;
+  sevenappCancel: (requestId: string) => Promise<unknown>;
 }
 
 export function getChatBridge(): ChatBridge | undefined {
   const api = window.electronAPI;
-  return typeof api?.aipyappRequest === 'function' && typeof api?.aipyappOnMessage === 'function'
-    && typeof api?.aipyappCancel === 'function' ? api : undefined;
+  return typeof api?.sevenappRequest === 'function' && typeof api?.sevenappOnMessage === 'function'
+    && typeof api?.sevenappCancel === 'function' ? api : undefined;
 }
 
 export function isStreamEvent(value: unknown): value is StreamEvent {
@@ -43,18 +43,19 @@ export async function streamChat(
     onAbort = () => {
       unsubscribe();
       // Main process cancellation terminates the active Python request, not just the UI stream.
-      void bridge.aipyappCancel(requestId).catch(() => {});
+      void bridge.sevenappCancel(requestId).catch(() => {});
       resolve();
     };
   });
-  unsubscribe = bridge.aipyappOnMessage((value) => {
+  unsubscribe = bridge.sevenappOnMessage((value) => {
+    console.log('streamChat received', value);
     if (!signal.aborted && isStreamEvent(value) && value.request_id === requestId && !value.done) {
       onEvent(value);
     }
   });
   signal.addEventListener('abort', onAbort, { once: true });
   try {
-    const request = bridge.aipyappRequest({ action: 'chat', request_id: requestId, messages, stream: true })
+    const request = bridge.sevenappRequest({ action: 'chat', request_id: requestId, messages, stream: true })
       .then((value) => {
         if (signal.aborted) return;
         if (!isStreamEvent(value)) throw new Error('聊天服务返回了无法识别的响应');
