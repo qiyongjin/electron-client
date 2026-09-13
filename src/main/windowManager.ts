@@ -1,13 +1,7 @@
-import { app, BrowserWindow, BrowserWindowConstructorOptions } from 'electron';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-// 手动设置开发环境判断
-const __dirname = dirname(fileURLToPath(import.meta.url));
+import { BrowserWindow, BrowserWindowConstructorOptions } from 'electron';
+import { DEV_SERVER_URL, IS_DEV, PRELOAD_PATH, RENDERER_HTML_PATH } from './common.js';
 
 export function createMainWindow(): BrowserWindow {
-  const isDev = !app.isPackaged;
-  const preloadPath = join(__dirname, '../../preload/preload/preload.js');
   
   const options: BrowserWindowConstructorOptions = {
     width: 1180,
@@ -17,22 +11,21 @@ export function createMainWindow(): BrowserWindow {
     webPreferences: {
       nodeIntegration: false,  // 避免渲染进程直接访问 Node.js
       contextIsolation: true,  // 确保渲染进程和主进程的上下文隔离
-      preload: preloadPath,
-      webSecurity: isDev // 禁用浏览器的同源策略（CORS 限制），允许你的渲染进程随意请求任何跨域资源  
+      preload: PRELOAD_PATH,
+      webSecurity: IS_DEV // 保持现有开发/打包环境的 webSecurity 配置。
     },
     show: false,
   };
 
   let mainWindow = new BrowserWindow(options) as BrowserWindow | null;
 
-  if (isDev) {
-    mainWindow?.loadURL('http://localhost:3000').catch(err => {
+  if (IS_DEV) {
+    mainWindow?.loadURL(DEV_SERVER_URL).catch(err => {
       console.error('❌ Failed to load URL:', err);
     });
   } else {
-    const filePath = join(__dirname, '../../renderer/index.html');
-    console.log('📁 Loading production file:', filePath);
-    mainWindow?.loadFile(filePath).catch(err => {
+    console.log('📁 Loading production file:', RENDERER_HTML_PATH);
+    mainWindow?.loadFile(RENDERER_HTML_PATH).catch(err => {
       console.error('❌ Failed to load file:', err);
     });
   }
@@ -41,7 +34,7 @@ export function createMainWindow(): BrowserWindow {
     mainWindow?.show();
 
     // 开发环境下打开开发者工具
-    if (isDev) {
+    if (IS_DEV) {
       mainWindow?.webContents.openDevTools();
     }
   });

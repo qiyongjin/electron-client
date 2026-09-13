@@ -24,7 +24,9 @@
         }
     },
     "include": [
-        "src/main/**/*"  // 修复：移除多余的逗号
+        "src/main/**/*",
+        "src/shared/types/upload.ts",
+        "src/shared/types/agent.ts"
     ],
     "exclude": [
         "node_modules",

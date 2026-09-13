@@ -23,11 +23,7 @@ def handle_request(request: Any) -> dict[str, Any]:
     if action == "chat":
         return chat(request, respond)
     if action == "message":
-        for index in range(20):
-            # stream=True 表示这是一条进度消息，不会结束 Electron 的 invoke 请求。
-            respond({"success": True, "stream": True, "message": f"Message {index}"})
-            time.sleep(1)
-        return {"success": True, "done": True, "message": "所有消息已发送"}
+        return {"success": True, "done": True, "message": "返回消息"}
 
     # 最小示例：后端收到什么，就把它原样回传给主进程。
     return {"success": True, "done": True, "data": request}
@@ -49,5 +45,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    print("backend start", flush=True, file=sys.stderr)
+    print("stdio.py start ...", flush=True, file=sys.stderr)
     main()

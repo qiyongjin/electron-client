@@ -1,9 +1,8 @@
 import { app, ipcMain, type WebContents } from 'electron';
 import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import path from 'node:path';
 import readline from 'node:readline';
-import { fileURLToPath } from 'node:url';
+import { getBackendScriptPath, getPythonCommand } from '../common.js';
 
 export interface SevenappResponse {
   success: boolean;
@@ -28,23 +27,6 @@ const pendingRequests: PendingRequest[] = [];
 let activeRequest: PendingRequest | undefined;
 let shuttingDown = false;
 
-function getBackendScriptPath(): string {
-  // 开发时 main 入口位于 dist/main/main/ipc，不能依赖 app.getAppPath()
-  // （它会指向 dist/main/main，而不是项目根目录）。
-  const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
-  const developmentPath = path.resolve(currentDirectory, '../../../../resources/sevenapp/stdio.py');
-  if (!app.isPackaged) return developmentPath;
-  const packagedPath = path.join(
-    process.resourcesPath,
-    'app.asar.unpacked',
-    'resources',
-    'sevenapp',
-    'stdio.py',
-  );
-
-  return existsSync(packagedPath) ? packagedPath : developmentPath;
-}
-
 function failBackend(child: ChildProcessWithoutNullStreams, error: Error): void {
   // A cancelled process can exit after its replacement starts. Ignore its late events.
   if (backend !== child) return;
@@ -62,15 +44,18 @@ function startBackend(): ChildProcessWithoutNullStreams {
   const scriptPath = getBackendScriptPath();
   if (!existsSync(scriptPath)) throw new Error(`找不到 sevenapp 后端文件: ${scriptPath}`);
 
-  const pythonCommand = process.env.SEVENAPP_PYTHON ?? (process.platform === 'win32' ? 'python' : 'python3');
+  const pythonCommand = getPythonCommand();
   const child = spawn(pythonCommand, ['-u', scriptPath], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
   backend = child;
+  child.once('spawn', () => {
+    console.info('[sevenapp] 后端已启动，PID=%s，Python=%s', child.pid, pythonCommand);
+  });
 
   readline.createInterface({ input: child.stdout }).on('line', (line) => {
     if (backend !== child) return;
     const request = activeRequest;
     if (!request) return;
-
+    console.log("sevenapp 后端返回-----", line)
     try {
       const response = { ...JSON.parse(line), request_id: request.requestId } as SevenappResponse;
       if (request.sender && !request.sender.isDestroyed()) {
@@ -86,7 +71,9 @@ function startBackend(): ChildProcessWithoutNullStreams {
     }
   });
 
-  child.stderr.on('data', (chunk: Buffer) => console.error(`[sevenapp] ${chunk.toString().trim()}`));
+  child.stderr.on('data', (chunk: Buffer) => 
+    console.info(`[sevenapp] ${chunk.toString().trim()}`)
+  );
   child.on('error', (error) => {
     failBackend(child, new Error(`无法启动 sevenapp 后端: ${error.message}`));
   });
@@ -97,12 +84,14 @@ function startBackend(): ChildProcessWithoutNullStreams {
   return child;
 }
 
+// 发送下一个请求
 function dispatchNextRequest(): void {
   if (shuttingDown || activeRequest || !pendingRequests.length) return;
   const request = pendingRequests.shift()!;
   activeRequest = request;
   try {
-    const serialized = JSON.stringify(request.payload);
+    const serialized = JSON.stringify(request.payload);  // 序列化请求 payload
+    console.log("serialized 发送请求-----", serialized)
     const child = startBackend();
     child.stdin.write(`${serialized}\n`, (error) => {
       if (error && activeRequest === request) failBackend(child, error);
@@ -114,6 +103,7 @@ function dispatchNextRequest(): void {
   }
 }
 
+// 发送 sevenapp 请求
 export function sendSevenappRequest(payload: unknown, sender?: WebContents): Promise<SevenappResponse> {
   return new Promise((resolve, reject) => {
     if (shuttingDown) { reject(new Error('应用正在关闭')); return; }
@@ -164,7 +154,9 @@ function stopBackend(): void {
 
 /** 注册供渲染进程调用的 sevenapp 后端 IPC。 */
 export function setupSevenappProcessIpc(): void {
-  ipcMain.handle('sevenapp:request', (event, payload: unknown) => sendSevenappRequest(payload, event.sender));
+  ipcMain.handle('sevenapp:request', (event, payload: unknown) => {
+     return sendSevenappRequest(payload, event.sender) // 发送 sevenapp 请求
+  });
   ipcMain.handle('sevenapp:cancel', (event, requestId: unknown) => {
     if (typeof requestId !== 'string' || !requestId) throw new Error('无效的聊天请求 ID');
     return cancelSevenappRequest(requestId, event.sender);

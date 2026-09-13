@@ -3,6 +3,8 @@ import HomeComponent from "../pages/HomeComponent"
 import HomeTest from "../pages/HomeTest"
 import BroadCast from "../pages/BroadCast"
 import ChatPage from "../pages/ChatPage"
+import AccountPage from "../pages/AccountPage"
+import AgentPage from "../pages/AgentPage"
 
 
 // 错误边界组件
@@ -21,12 +23,13 @@ function ErrorBoundary() {
 const routers = [
     {
         path: "/",
-        element: <Navigate to="/chatPage" replace />,
+        element: <Navigate to="/agent" replace />,
         errorElement: <ErrorBoundary />
     },
     {
         path: "/chatPage",
         element: <ChatPage />,
+        children: [{ path: "account/:section", element: <AccountPage /> }],
         errorElement: <ErrorBoundary />
     },
     {
@@ -47,6 +50,11 @@ const routers = [
     {
         path: "/broad",
         element: <BroadCast />,
+        errorElement: <ErrorBoundary />
+    },
+    {
+        path: "/agent",
+        element: <AgentPage />,
         errorElement: <ErrorBoundary />
     }
 ]

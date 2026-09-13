@@ -1,5 +1,160 @@
 @import "tailwindcss";
 
+:root {
+  /* 基础颜色 */
+  --chat-bg: #fff;
+  --chat-ink: #26322e;
+  --chat-muted: #7a837e;
+  --chat-line: #e7eae6;
+  --chat-green: #376754;
+  --chat-pale: #eef3ec;
+  --chat-focus-ring: #59816b;
+  --chat-icon-color: #7b847f;
+  --chat-icon-hover-bg: #e9eee7;
+  --chat-on-primary: #fff;
+
+  /* 侧边栏 */
+  --chat-sidebar-bg: #f6f7f3;
+  --chat-brand-shadow: #37675412;
+  --chat-new-button-border: #d5ded0;
+  --chat-new-button-bg: #eaf0e5;
+  --chat-new-button-color: #365d44;
+  --chat-new-button-hover-bg: #e0e9d8;
+  --chat-new-button-shortcut-color: #8a9b80;
+  --chat-sidebar-label-color: #939b92;
+  --chat-sidebar-label-action-color: #7c8877;
+  --chat-conversation-color: #727b72;
+  --chat-conversation-hover-bg: #edf0e9;
+  --chat-conversation-active-bg: #e8ede2;
+  --chat-conversation-active-color: #36573f;
+  --chat-sidebar-footer-border: #e3e8dd;
+  --chat-workspace-icon-bg: #e4e8de;
+  --chat-workspace-icon-border: #d7ddcf;
+  --chat-workspace-icon-color: #75856b;
+  --chat-sidebar-footer-muted: #91988c;
+  --chat-sidebar-footer-link-color: #9ca294;
+  --chat-sidebar-scrim-bg: #25332744;
+  --account-avatar-bg: #a05db0;
+  --account-menu-shadow: #26322e14;
+  --account-sage: #376754;
+  --account-violet: #82549c;
+  --account-violet-hover: #69417f;
+  --account-violet-pale: #f2ecf6;
+  --account-blue: #3e709a;
+  --account-blue-hover: #315a7c;
+  --account-blue-pale: #eaf1f7;
+
+  /* 页头与欢迎页 */
+  --chat-header-border: #eff0ed;
+  --chat-header-subtitle-color: #9a9f98;
+  --chat-connection-color: #788473;
+  --chat-connection-border: #e7ebe1;
+  --chat-connection-indicator: #76a06e;
+  --chat-preview-indicator: #bd9e67;
+  --chat-preview-notice-color: #8c795c;
+  --chat-preview-notice-bg: #faf8f0;
+  --chat-preview-notice-border: #f2efdf;
+  --chat-spark-color: #b7cba0;
+  --chat-eyebrow-color: #8a9880;
+  --chat-welcome-subtitle-color: #8b9986;
+  --chat-suggestion-border: #e7ebe3;
+  --chat-suggestion-bg: #fcfcfa;
+  --chat-suggestion-hover-bg: #f3f6ef;
+  --chat-suggestion-hover-border: #cbd7c1;
+  --chat-suggestion-icon-color: #7b9070;
+  --chat-suggestion-description-color: #99a090;
+  --chat-suggestion-arrow-color: #acb6a3;
+
+  /* 输入框与发送按钮 */
+  --chat-composer-border: #dbe3d5;
+  --chat-composer-shadow: #253e2b06;
+  --chat-composer-focus-border: #93af89;
+  --chat-composer-focus-shadow: #708a6410;
+  --chat-composer-dragging-bg: #f3f7ef;
+  --chat-composer-placeholder-color: #a0a699;
+  --chat-toolbar-divider-bg: #e6eae0;
+  --chat-context-label-color: #8a957f;
+  --chat-shortcut-color: #a5ad9f;
+  --chat-send-hover-bg: #284f3f;
+  --chat-send-disabled-bg: #dfe7d8;
+  --chat-send-disabled-color: #8c9c81;
+  --chat-stop-button-bg: #526a5c;
+  --chat-composer-note-color: #a6ada1;
+  --chat-other-generation-color: #8a8069;
+
+  /* 消息与代码块 */
+  --chat-conversation-start-color: #b0b6aa;
+  --chat-avatar-bg: #eaf1e7;
+  --chat-avatar-color: #55764a;
+  --chat-avatar-border: #dce7d6;
+  --chat-avatar-user-bg: #f1efea;
+  --chat-avatar-user-border: #e6e2d9;
+  --chat-avatar-user-color: #938977;
+  --chat-message-time-color: #b0b7aa;
+  --chat-ai-label-border: #dde6d6;
+  --chat-ai-label-color: #8a9b7d;
+  --chat-user-content-bg: #f3f5ef;
+  --chat-inline-code-bg: #f1f3ed;
+  --chat-inline-code-color: #58704d;
+  --chat-content-border: #e2e7dc;
+  --chat-code-header-bg: #eef2e8;
+  --chat-code-header-color: #859277;
+  --chat-subtle-bg: #f8faf5;
+  --chat-code-color: #4b5d42;
+  --chat-blockquote-border: #cbd9bd;
+  --chat-blockquote-color: #87917f;
+  --chat-thinking-color: #96a08c;
+  --chat-thinking-dot-bg: #8ca77c;
+  --chat-spinner-track: #d3dfc8;
+  --chat-spinner-indicator: #699053;
+  --chat-stream-cursor-bg: #91a87e;
+  --chat-reasoning-color: #8c9882;
+  --chat-reasoning-border: #e0e8d9;
+  --chat-message-action-color: #97a08d;
+  --chat-text-button-hover-color: #49663c;
+  --chat-message-muted: #96a08e;
+  --chat-system-message-color: #909987;
+  --chat-history-border: #e1e8d9;
+  --chat-history-color: #7e9170;
+  --chat-latest-shadow: #35472b15;
+  --chat-latest-border: #dce5d4;
+  --chat-latest-color: #708561;
+
+  /* 工具调用与错误提示 */
+  --chat-tool-border: #e2e8dc;
+  --chat-tool-summary-bg: #fafbf7;
+  --chat-tool-summary-color: #73836a;
+  --chat-tool-state-color: #819774;
+  --chat-tool-body-border: #e7ecdf;
+  --chat-tool-heading-color: #8b9780;
+  --chat-detail-bg: #f6f8f2;
+  --chat-error-color: #b06858;
+  --chat-message-error-bg: #fcf4ef;
+  --chat-message-error-border: #efdfd4;
+  --chat-message-error-color: #ae7461;
+
+  /* 附件与引用 */
+  --chat-attachment-bg: #fbfcf9;
+  --chat-file-icon-color: #8ea37c;
+  --chat-attachment-description-color: #9ba591;
+  --chat-attachment-error-border: #ebd7cb;
+  --chat-attachment-error-bg: #fefaf7;
+  --chat-attachment-error-color: #b38268;
+  --chat-attachment-progress-color: #82a56a;
+  --chat-citations-border: #edf0e7;
+  --chat-citation-border: #e6ebdf;
+  --chat-citation-bg: #fbfcf8;
+  --chat-citation-number-color: #8e9d82;
+  --chat-citation-number-bg: #eef2e7;
+  --chat-citation-description-color: #8c9b7f;
+  --chat-citation-snippet-color: #97a28c;
+  --chat-citation-icon-color: #9fab92;
+  --chat-reference-border: #dce4d4;
+  --chat-reference-color: #35432d;
+  --chat-reference-shadow: #20301a22;
+  --chat-reference-backdrop-bg: #1e2a2455;
+}
+
 body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,

@@ -29,9 +29,12 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 
 # 在这里填写你的配置；留空时兼容原有请求字段和环境变量配置。
-API_KEY = "8676a080-ba76-4c52-a8c0-b70973930251"
-BASE_URL = "https://aigw.intra.knownsec.com/glm-5/v1/chat/completions"
-MODEL = "glm-5.2"
+# API_KEY = ""
+# BASE_URL = "https://aigw.intra.knownsec.com/glm-5/v1/chat/completions"
+# MODEL = "glm-5.2"
+# API_KEY = ""
+BASE_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
+MODEL = "doubao-seed-evolving"
 
 
 class _NoRedirect(HTTPRedirectHandler):

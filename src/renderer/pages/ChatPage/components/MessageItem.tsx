@@ -17,12 +17,9 @@ export const MessageItem = memo(function MessageItem({ message, canRetry, onRetr
     try { await navigator.clipboard.writeText(message.content); setCopyStatus('已复制'); }
     catch { setCopyStatus('复制失败，请手动选择文本'); }
   };
-  return <article className={`chat-message chat-message-${message.role}`} aria-label={isUser ? '你的消息' : '小七的回复'}>
-    <div className={`chat-avatar ${isUser ? 'chat-avatar-user' : ''}`}>{isUser ? '我' : <ChatIcon name="spark" size={20} />}</div>
+  return <article className={`chat-message ${isUser ? 'chat-message-user' : 'chat-message-assistant'}`} aria-label={isUser ? '你的消息' : '小七的回复'}>
+    {/* <div className={`chat-avatar ${isUser ? 'chat-avatar-user' : ''}`}>{isUser ? '我' : <ChatIcon name="spark" size={20} />}</div> */}
     <div className="chat-message-main">
-      <div className="chat-message-meta"><strong>{isUser ? '你' : '小七'}</strong>{!isUser && <span className="chat-ai-label">AI</span>}
-        <time dateTime={new Date(message.createdAt).toISOString()}>{new Date(message.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</time>
-      </div>
       {message.reasoning && <details className="chat-reasoning"><summary><ChatIcon name="spark" size={14} />
         {busy ? '正在思考' : '思考过程'}<ChatIcon name="chevron" size={13} className="chat-disclosure" /></summary>
         <p>{message.reasoning}</p></details>}
@@ -40,6 +37,7 @@ export const MessageItem = memo(function MessageItem({ message, canRetry, onRetr
         {canRetry && <button className="chat-text-button" onClick={() => onRetry(message.id)}><ChatIcon name="retry" size={14} />
           {message.status === 'error' ? '重试' : '重新生成'}</button>}
         <span role="status">{copyStatus}</span>
+        <time dateTime={new Date(message.createdAt).toISOString()}>{new Date(message.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</time>
       </div>}
     </div>
   </article>;

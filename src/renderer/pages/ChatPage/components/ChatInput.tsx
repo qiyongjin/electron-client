@@ -1,4 +1,5 @@
 import { forwardRef, useId, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
+import { usePreferencesStore } from '../../../stores/usePreferencesStore';
 import type { Attachment } from '../types';
 import { useFileUpload } from '../hooks/useFileUpload';
 import { ChatIcon } from './ChatIcon';
@@ -10,6 +11,7 @@ export interface ChatInputHandle { setDraft: (value: string) => void }
 export const ChatInput = forwardRef<ChatInputHandle, {
   generating: boolean; disabled: boolean; onSend: (content: string, attachments: Attachment[]) => boolean; onStop: () => void;
 }>(function ChatInput({ generating, disabled, onSend, onStop }, ref) {
+  const sendShortcut = usePreferencesStore(s => s.sendShortcut);
   const [draft, setDraft] = useState('');
   const draftId = useId();
   const [dragging, setDragging] = useState(false);
@@ -39,7 +41,7 @@ export const ChatInput = forwardRef<ChatInputHandle, {
         placeholder="向小七提问，或拖入文件一起聊聊…" onChange={(event) => setDraft(event.target.value)}
         onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }}
         onKeyDown={(event) => {
-          if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && !composing.current && event.keyCode !== 229) {
+          if (event.key === 'Enter' && !event.shiftKey && (sendShortcut === 'enter' || event.ctrlKey || event.metaKey) && !event.nativeEvent.isComposing && !composing.current && event.keyCode !== 229) {
             event.preventDefault(); submit();
           }
         }} />
@@ -47,9 +49,9 @@ export const ChatInput = forwardRef<ChatInputHandle, {
       <div className="chat-composer-toolbar"><div className="chat-composer-tools">
         <AttachmentUploader onFiles={upload.addFiles} disabled={disabled || generating} />
         <span className="chat-toolbar-divider" /><span className="chat-context-label"><ChatIcon name="spark" size={14} />上下文对话</span>
-      </div><div className="chat-submit-area"><span className="chat-shortcut">Shift + Enter 换行</span>
+      </div><div className="chat-submit-area"><span className="chat-shortcut">{sendShortcut === 'enter' ? 'Shift + Enter 换行' : 'Ctrl / ⌘ + Enter 发送'}</span>
         {generating ? <button type="button" className="chat-send-button chat-stop-button" aria-label="停止生成" title="停止生成" onClick={onStop}><ChatIcon name="stop" size={17} /></button>
-          : <button type="submit" className="chat-send-button" disabled={!ready} aria-label="发送消息" title="发送消息（Enter）"><ChatIcon name="arrow" size={20} /></button>}
+          : <button type="submit" className="chat-send-button" disabled={!ready} aria-label="发送消息" title={sendShortcut === 'enter' ? '发送消息（Enter）' : '发送消息（Ctrl / ⌘ + Enter）'}><ChatIcon name="arrow" size={20} /></button>}
       </div></div>
     </form>
     <p className="chat-composer-note">支持 TXT、MD、CSV、JSON · 最多 5 个文件，每个 1 MB、40,000 字符</p>

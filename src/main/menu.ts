@@ -1,4 +1,5 @@
 import { app, BrowserWindow, Menu, type MenuItemConstructorOptions } from 'electron';
+import { IS_MAC } from './common.js';
 // 暂时不用原始菜单
 export function createApplicationMenu(): Menu {
   const template: MenuItemConstructorOptions[] = [
@@ -7,7 +8,7 @@ export function createApplicationMenu(): Menu {
       submenu: [
         {
           label: '退出',
-          accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
+          accelerator: IS_MAC ? 'Cmd+Q' : 'Ctrl+Q',
           click: () => app.quit(),
         },
       ],

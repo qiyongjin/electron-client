@@ -8,14 +8,14 @@ export function setupFileIpc(): void {
   ipcMain.handle('file:read', async (event, filePath: string): Promise<{ success: boolean; content?: string; error?: string }> => {
     try {
       console.log(`📂 Reading file: ${filePath}`);
-      // const content = await readFile(filePath, 'utf-8');
-      return { success: true };
+      const content = await readFile(filePath, 'utf-8');
+      return { success: true, content };
     } catch (error) {
       return { success: false, error: (error as Error).message };
     }
   });
 
-  // 写入文件
+  // 写入文件, 在某个文件下写入文件内容
   ipcMain.handle('file:write', async (event, filePath: string, content: string): Promise<{ success: boolean; error?: string }> => {
     try {
       // 确保目录存在
@@ -32,14 +32,16 @@ export function setupFileIpc(): void {
   // 打开文件对话框
   ipcMain.handle('file:open-dialog', async (event, options: any) => {
     const result = await dialog.showOpenDialog(options);
+    console.log("open-dialog result:", result)
     return result;
   });
 
   // 保存文件对话框
   ipcMain.handle('file:save-dialog', async (event, options: any) => {
     const result = await dialog.showSaveDialog(options);
+    console.log("save-dialog result:", result)
     return result;
-  });
+  }); 
 
   // 获取文件信息
   ipcMain.handle('file:stat', async (event, filePath: string) => {
@@ -60,7 +62,7 @@ export function setupFileIpc(): void {
     }
   });
 
-  // 在文件管理器中显示文件
+  // 在文件管理器中显示文件所在目录
   ipcMain.handle('file:show-in-folder', async (event, filePath: string) => {
     try {
       await shell.showItemInFolder(filePath);
