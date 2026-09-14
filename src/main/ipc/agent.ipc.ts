@@ -1,5 +1,8 @@
 import { app, dialog, ipcMain, safeStorage, type WebContents } from "electron";
 import { pathToFileURL } from "node:url";
+import { randomUUID } from "node:crypto";
+import { stat } from "node:fs/promises";
+import path from "node:path";
 import { IS_DEV, DEV_SERVER_URL, RENDERER_HTML_PATH } from "../common.js";
 import { AgentStorage } from "../agent/AgentStorage.js";
 import { AgentManager } from "../agent/AgentManager.js";
@@ -30,6 +33,8 @@ export async function setupAgentIpc() {
       return listener(event, ...args);
     });
   const viewers = new Set<WebContents>();
+  const selections = new Map<number, { id: string; archive: string }>();
+  let installOwner: number | undefined;
   const storage = new AgentStorage(AGENTS_DIR, {
     encode(value, sensitive) {
       const available =
@@ -68,19 +73,23 @@ export async function setupAgentIpc() {
       for (const viewer of viewers)
         if (!viewer.isDestroyed()) viewer.send("agent:changed", agents);
     },
+    (progress) => {
+      for (const viewer of viewers)
+        if (!viewer.isDestroyed()) viewer.send("agent:install-progress", progress);
+    },
   );
   await manager.initialize();
   const watch = (sender: WebContents) => {
     if (!viewers.has(sender)) {
       viewers.add(sender);
-      sender.once("destroyed", () => viewers.delete(sender));
+      sender.once("destroyed", () => { viewers.delete(sender); selections.delete(sender.id); });
     }
   };
   handle("agent:list", (event) => {
     watch(event.sender);
     return manager.list();
   });
-  handle("agent:install", async (event) => {
+  handle("agent:choose-package", async (event) => {
     watch(event.sender);
     const selected = await dialog.showOpenDialog({
       title: "安装本地 Agent",
@@ -88,32 +97,35 @@ export async function setupAgentIpc() {
       filters: [{ name: "Agent bundle", extensions: ["dxt", "mcpb"] }],
     });
     if (selected.canceled) return null;
-    const confirm = await dialog.showMessageBox({
-      type: "warning",
-      title: "安装 Agent",
-      message: "仅安装你信任的 Agent 包",
-      detail:
-        "安装后不会自动启动。点击启动时，包内程序将以当前用户权限运行，可访问本地文件和网络。",
-      buttons: ["取消", "安装"],
-      defaultId: 0,
-      cancelId: 0,
-    });
-    if (confirm.response !== 1) return null;
-    return manager.install(selected.filePaths[0]);
+    const archive = selected.filePaths[0];
+    const info = await stat(archive);
+    if (!info.isFile() || ![".dxt", ".mcpb"].includes(path.extname(archive).toLowerCase()))
+      throw new Error("请选择 .dxt 或 .mcpb 安装包");
+    if (info.size > 512 * 1024 ** 2) throw new Error("安装包不能超过 512 MiB");
+    const id = randomUUID();
+    selections.set(event.sender.id, { id, archive });
+    return { id, name: path.basename(archive), size: info.size };
+  });
+  handle("agent:install", async (event, sourceId: string) => {
+    const source = selections.get(event.sender.id);
+    if (!source || source.id !== sourceId) throw new Error("请选择安装包并在客户端中确认安装");
+    if (installOwner !== undefined) throw new Error("已有安装任务正在执行");
+    installOwner = event.sender.id;
+    selections.delete(event.sender.id);
+    try { return await manager.install(source.archive, source.id); }
+    finally { installOwner = undefined; }
+  });
+  handle("agent:install-progress", (event) => {
+    watch(event.sender);
+    return manager.installer.snapshot();
+  });
+  handle("agent:cancel-install", (event, taskId: string) => {
+    if (installOwner !== event.sender.id) return false;
+    return manager.installer.cancel(taskId);
   });
   handle("agent:start", (_event, id: string) => manager.start(id));
   handle("agent:stop", (_event, id: string) => manager.stop(id));
   handle("agent:uninstall", async (_event, id: string) => {
-    const record = manager.registry.get(id);
-    const confirm = await dialog.showMessageBox({
-      type: "question",
-      message: `卸载 ${record.manifest.display_name ?? record.manifest.name}？`,
-      detail: "会停止运行，并删除安装文件和保存的配置。",
-      buttons: ["取消", "卸载"],
-      defaultId: 0,
-      cancelId: 0,
-    });
-    if (confirm.response !== 1) return false;
     await manager.uninstall(id);
     return true;
   });

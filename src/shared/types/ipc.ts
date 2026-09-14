@@ -16,6 +16,9 @@ export interface SevenappResponse extends OperationResult {
 // 所有 invoke 请求均返回 Promise，即使主进程 handler 本身是同步函数。
 export interface IpcChannels {
   'agent:install': AgentAPI['install'];
+  'agent:choose-package': AgentAPI['choosePackage'];
+  'agent:cancel-install': AgentAPI['cancelInstall'];
+  'agent:install-progress': AgentAPI['getInstallProgress'];
   'agent:list': AgentAPI['list'];
   'agent:start': AgentAPI['start'];
   'agent:stop': AgentAPI['stop'];

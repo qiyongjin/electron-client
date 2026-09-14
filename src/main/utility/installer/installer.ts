@@ -7,7 +7,18 @@ import { createHash } from "node:crypto";
 import { crc32 } from "node:zlib";
 import path from "node:path";
 import { parseManifest, relativeFile } from "../../agent/manifest.js";
-export async function extractBundle(archive: string, destination: string) {
+import type { AgentExtractionProgress } from "../../../shared/types/agent.js";
+export async function extractBundle(archive: string, destination: string, onProgress: (progress: AgentExtractionProgress) => void = () => {}) {
+  let lastProgress = 0;
+  let lastPhase = "";
+  const report = (progress: AgentExtractionProgress, force = false) => {
+    const now = Date.now();
+    if (force || progress.phase !== lastPhase || now - lastProgress >= 80) {
+      lastPhase = progress.phase;
+      lastProgress = now;
+      onProgress(progress);
+    }
+  };
   if (![".dxt", ".mcpb"].includes(path.extname(archive).toLowerCase()))
     throw new Error("请选择 .dxt 或 .mcpb 安装包");
   const info = await stat(archive);
@@ -15,7 +26,13 @@ export async function extractBundle(archive: string, destination: string) {
     throw new Error("安装包须为普通文件且不超过 512 MiB");
   await mkdir(destination, { recursive: true });
   const hash = createHash("sha256");
-  for await (const data of createReadStream(archive)) hash.update(data);
+  let hashedBytes = 0;
+  report({ phase: "hashing", percent: 3, message: "正在计算安装包指纹", processedBytes: 0, totalBytes: info.size });
+  for await (const data of createReadStream(archive)) {
+    hash.update(data);
+    hashedBytes += data.length;
+    report({ phase: "hashing", percent: 3 + 22 * hashedBytes / Math.max(1, info.size), message: "正在计算安装包指纹", processedBytes: hashedBytes, totalBytes: info.size });
+  }
   const zip = await new Promise<yauzl.ZipFile>((resolve, reject) =>
     yauzl.open(
       archive,
@@ -31,6 +48,7 @@ export async function extractBundle(archive: string, destination: string) {
   let total = 0;
   let count = 0;
   const names = new Set<string>();
+  report({ phase: "extracting", percent: 25, message: "正在解压并校验文件", processedEntries: 0, totalEntries: zip.entryCount, processedBytes: 0 });
   await new Promise<void>((resolve, reject) => {
     let failed = false;
     const fail = (error: unknown) => {
@@ -48,6 +66,12 @@ export async function extractBundle(archive: string, destination: string) {
         const relative = relativeFile(
           isDirectory ? entry.fileName.slice(0, -1) : entry.fileName,
         );
+        const extracted = (bytes: number, force = false) => report({
+          phase: "extracting", percent: 25 + 65 * ((count - 1 + (isDirectory || !entry.uncompressedSize ? 1 : bytes / entry.uncompressedSize)) / Math.max(1, zip.entryCount)),
+          message: "正在解压并校验文件", currentFile: relative,
+          processedEntries: Math.max(0, count - (bytes < entry.uncompressedSize ? 1 : 0)), totalEntries: zip.entryCount,
+          processedBytes: total - entry.uncompressedSize + bytes,
+        }, force);
         const normalized = relative.normalize("NFC").toLowerCase();
         if (names.has(normalized)) throw new Error(`包内路径重复: ${relative}`);
         names.add(normalized);
@@ -68,6 +92,7 @@ export async function extractBundle(archive: string, destination: string) {
         const target = path.join(destination, relative);
         if (isDirectory) {
           await mkdir(target, { recursive: true });
+          extracted(0);
           return;
         }
         await mkdir(path.dirname(target), { recursive: true });
@@ -85,6 +110,7 @@ export async function extractBundle(archive: string, destination: string) {
             if (bytes > entry.uncompressedSize)
               return callback(new Error("解压大小不匹配"));
             checksum = crc32(chunk, checksum);
+            extracted(bytes);
             callback(null, chunk);
           },
         });
@@ -97,12 +123,14 @@ export async function extractBundle(archive: string, destination: string) {
           throw new Error(`文件校验失败: ${relative}`);
         if ((entry.externalFileAttributes >>> 16) & 0o111)
           await chmod(target, 0o700);
+        extracted(bytes);
       })().then(() => {
         if (!failed) zip.readEntry();
       }, fail);
     });
     zip.readEntry();
   });
+  report({ phase: "validating", percent: 92, message: "正在校验清单与启动入口", processedEntries: count, totalEntries: zip.entryCount, processedBytes: total }, true);
   const manifest = parseManifest(
     JSON.parse(await readFile(path.join(destination, "manifest.json"), "utf8")),
   );
@@ -115,7 +143,7 @@ export async function extractBundle(archive: string, destination: string) {
 if (process.parentPort)
   process.parentPort.on("message", (event) => {
     if (event.data?.type !== "install") return;
-    void extractBundle(event.data.archive, event.data.destination)
+    void extractBundle(event.data.archive, event.data.destination, (progress) => process.parentPort.postMessage({ type: "progress", progress }))
       .then(
         (result) => process.parentPort.postMessage({ result }),
         (error) =>

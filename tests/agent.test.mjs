@@ -14,6 +14,7 @@ import {
   makeBundle,
   demoEntries,
   demoManifest,
+  demoSource,
 } from "../scripts/agent-fixture.mjs";
 async function fixture(t) {
   const directory = await mkdtemp(path.join(os.tmpdir(), "seven-agent-"));
@@ -39,6 +40,61 @@ test("DXT and MCPB install valid bundles without executing code, reject unsuppor
       server: { ...demoManifest.server, type: "uv" },
     }),
   );
+});
+
+test("legacy dxt_version accepts supported schema versions and reports unsupported or conflicting versions clearly", async (t) => {
+  const dir = await fixture(t);
+  for (const version of ["0.1", "0.2", "0.3"]) {
+    const manifest = { ...demoManifest, manifest_version: undefined, dxt_version: version };
+    const archive = path.join(dir, `legacy-${version}.dxt`);
+    await writeFile(archive, makeBundle(demoEntries(manifest)));
+    assert.equal((await extractBundle(archive, path.join(dir, version))).manifest.dxt_version, version);
+  }
+  assert.throws(() => parseManifest({ ...demoManifest, manifest_version: undefined, dxt_version: "9.9" }), /dxt_version.*0.1、0.2、0.3/);
+  assert.throws(() => parseManifest({ ...demoManifest, dxt_version: "0.2" }), /不一致/);
+});
+
+test("installer reports monotonic real hash, extraction and validation progress without claiming committed success", async (t) => {
+  const dir = await fixture(t);
+  const archive = path.join(dir, "progress.mcpb");
+  const bundle = makeBundle([...demoEntries(), { name: "data.txt", data: "x".repeat(200000) }]);
+  await writeFile(archive, bundle);
+  const events = [];
+  await extractBundle(archive, path.join(dir, "package"), (progress) => events.push(progress));
+  assert.deepEqual([...new Set(events.map((event) => event.phase))], ["hashing", "extracting", "validating"]);
+  assert.equal(events[0].totalBytes, bundle.length);
+  assert.equal(events.at(-1).processedEntries, 3);
+  assert.equal(events.at(-1).totalEntries, 3);
+  for (let i = 1; i < events.length; i++) assert(events[i].percent >= events[i - 1].percent);
+  assert(events.every((event) => event.percent < 100));
+});
+
+test("stdout banners and structured logs do not corrupt MCP initialization; secrets stay redacted", async (t) => {
+  const dir = await fixture(t);
+  await writeFile(path.join(dir, "server.cjs"),
+    "console.log('Agent starting '+process.env.AGENT_TOKEN);console.log(JSON.stringify({level:'info',message:'ready'}));\n" + demoSource);
+  const events = [];
+  const runtime = new AgentRuntime((event) => events.push(event));
+  try {
+    await runtime.start({ manifest: demoManifest, directory: dir, config: { token: "stdout-secret" }, variables: {}, nodeExecutable: process.execPath, pythonExecutable: "python3" });
+    assert.equal((await runtime.request("tools/list")).tools[0].name, "echo");
+    assert(events.some((event) => event.type === "log" && event.message.includes("[stdout] Agent starting [REDACTED]")));
+    assert(!JSON.stringify(events).includes("stdout-secret"));
+  } finally { await runtime.stop(); }
+});
+
+test("malformed JSON-RPC and excessive stdout noise still fail instead of pretending to initialize", async (t) => {
+  const dir = await fixture(t);
+  for (const [source, pattern] of [
+    ["console.log('{\"jsonrpc\":');setInterval(()=>{},1000)", /损坏/],
+    ["console.log(JSON.stringify({jsonrpc:'1.0',id:1,result:{}}));setInterval(()=>{},1000)", /无效/],
+    ["console.log('x'.repeat(70000));setInterval(()=>{},1000)", /非协议内容/],
+  ]) {
+    await writeFile(path.join(dir, "server.cjs"), source);
+    const runtime = new AgentRuntime(() => {});
+    t.after(() => runtime.stop());
+    await assert.rejects(runtime.start({ manifest: demoManifest, directory: dir, config: {}, variables: {}, nodeExecutable: process.execPath, pythonExecutable: "python3" }), pattern);
+  }
 });
 test("installer rejects traversal, links, CRC errors, case collisions and ZIP bombs", async (t) => {
   const dir = await fixture(t);

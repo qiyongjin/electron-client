@@ -2,6 +2,7 @@ import type {
   AgentConfig,
   AgentTool,
   InstalledAgent,
+  AgentInstallProgress,
 } from "../../shared/types/agent.js";
 import { AgentStorage } from "./AgentStorage.js";
 import { AgentRegistry } from "./AgentRegistry.js";
@@ -22,12 +23,14 @@ export class AgentManager {
     private variables: Record<string, string>,
     pythonExecutable: string,
     changed: (agents: InstalledAgent[]) => void,
+    installChanged: (progress: AgentInstallProgress) => void = () => {},
   ) {
     this.registry = new AgentRegistry(() => changed(this.registry.list()));
     this.installer = new AgentInstallManager(
       storage,
       this.registry,
       installerPath,
+      installChanged,
     );
     this.runtime = new AgentRuntimeManager(
       storage,
@@ -58,8 +61,8 @@ export class AgentManager {
       this.locks.delete(id);
     }
   }
-  install(archive: string) {
-    return this.exclusive("install", () => this.installer.install(archive));
+  install(archive: string, taskId?: string) {
+    return this.exclusive("install", () => this.installer.install(archive, taskId));
   }
   list() {
     return this.registry.list();

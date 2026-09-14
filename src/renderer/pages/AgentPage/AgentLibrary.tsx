@@ -5,7 +5,11 @@ import type {
   AgentLog,
   AgentTool,
   InstalledAgent,
+  AgentInstallSource,
+  AgentInstallProgress,
 } from "../../../shared/types/agent";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { InstallProgressCard, installFinished } from "./InstallProgressCard";
 const states = {
   stopped: "未启动",
   starting: "正在启动",
@@ -26,11 +30,25 @@ export default function AgentLibrary() {
   const [args, setArgs] = useState("{}");
   const [result, setResult] = useState("");
   const [logs, setLogs] = useState<AgentLog[]>([]);
+  const [installSource, setInstallSource] = useState<AgentInstallSource | null>(null);
+  const [installProgress, setInstallProgress] = useState<AgentInstallProgress | null>(null);
+  const [cancelTask, setCancelTask] = useState<string | null>(null);
+  const [uninstallTarget, setUninstallTarget] = useState<InstalledAgent | null>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
+  const [confirmError, setConfirmError] = useState("");
   const current = agents.find((item) => item.id === selected);
   useEffect(() => {
     if (!api) return;
     let active = true;
     let received = false;
+    let receivedProgress = false;
+    const stopProgress = api.onInstallProgress((progress) => {
+      receivedProgress = true;
+      if (active) setInstallProgress(progress);
+    });
+    void api.getInstallProgress().then((progress) => {
+      if (active && !receivedProgress) setInstallProgress(progress);
+    }).catch((error) => { if (active) setError(String(error)); });
     const stop = api.onChanged((items) => {
       received = true;
       if (active) setAgents(items);
@@ -46,6 +64,7 @@ export default function AgentLibrary() {
     return () => {
       active = false;
       stop();
+      stopProgress();
     };
   }, [api]);
   async function run(key: string, action: () => Promise<unknown>) {
@@ -81,15 +100,15 @@ export default function AgentLibrary() {
         </div>
         <button
           className="upload-primary agent-install-button"
-          disabled={!api || !!busy}
+          disabled={!api || !!busy || !installFinished(installProgress)}
           onClick={() =>
-            void run("install", async () => {
-              const installed = await api!.install();
-              if (installed) await inspect(installed.id);
+            void run("choose", async () => {
+              const source = await api!.choosePackage();
+              if (source) setInstallSource(source);
             })
           }
         >
-          {busy === "install" ? "正在校验与安装…" : "＋ 安装 Agent"}
+          {busy === "install" || !installFinished(installProgress) ? "正在安装…" : "＋ 安装 Agent"}
         </button>
       </div>
       <div className="agent-library-note">
@@ -107,6 +126,56 @@ export default function AgentLibrary() {
           {error}
         </p>
       )}
+      {installProgress && <InstallProgressCard progress={installProgress} onCancel={() => {
+        setConfirmError(""); setCancelTask(installProgress.id);
+      }} />}
+      {installSource && <ConfirmDialog title="安装智能体" confirmLabel="确认安装" onCancel={() => setInstallSource(null)}
+        onConfirm={() => {
+          const source = installSource;
+          setInstallSource(null);
+          setInstallProgress({ id: source.id, fileName: source.name, phase: "preparing", percent: 0, message: "正在准备安装", cancellable: false });
+          void run("install", async () => {
+            try {
+              const installed = await api!.install(source.id);
+              if (installed) await inspect(installed.id);
+            } finally {
+              // Also recovers errors rejected before the worker starts.
+              const latest = await api!.getInstallProgress();
+              setInstallProgress(latest);
+            }
+          });
+        }}>
+        <p className="client-confirm-filename">{installSource.name}</p>
+        <p>大小：{(installSource.size / 1024 ** 2).toFixed(2)} MiB</p>
+        <p>仅安装你信任的安装包。安装后不会自动启动；启动后，智能体可以访问本地文件和网络。</p>
+      </ConfirmDialog>}
+      {cancelTask && <ConfirmDialog title="取消此次安装？" confirmLabel="取消安装" cancelLabel="继续安装" danger
+        pending={confirmBusy} onCancel={() => { setCancelTask(null); setConfirmError(""); }} onConfirm={() => {
+          setConfirmBusy(true);
+          setConfirmError("");
+          void api!.cancelInstall(cancelTask).then((cancelled) => {
+            if (!cancelled) setError("安装已进入完成阶段、已结束，或由其他窗口发起，无法取消。");
+            setCancelTask(null);
+          }).catch((error) => setConfirmError(error instanceof Error ? error.message : String(error)))
+            .finally(() => setConfirmBusy(false));
+        }}>
+        <p>取消后将清理本次安装的临时文件，已安装的智能体和配置会保留。</p>
+        {confirmError && <p className="upload-error" role="alert">{confirmError}</p>}
+      </ConfirmDialog>}
+      {uninstallTarget && <ConfirmDialog title="卸载智能体？" confirmLabel="确认卸载" danger pending={confirmBusy}
+        onCancel={() => { setUninstallTarget(null); setConfirmError(""); }} onConfirm={() => {
+          setConfirmBusy(true);
+          setConfirmError("");
+          void api!.uninstall(uninstallTarget.id).then(() => {
+            if (selected === uninstallTarget.id) setSelected(undefined);
+            setUninstallTarget(null);
+          }).catch((error) => setConfirmError(error instanceof Error ? error.message : String(error)))
+            .finally(() => setConfirmBusy(false));
+        }}>
+        <p className="client-confirm-filename">{uninstallTarget.manifest.display_name ?? uninstallTarget.manifest.name}</p>
+        <p>将停止此智能体，并删除它的安装文件和保存的配置。</p>
+        {confirmError && <p className="upload-error" role="alert">{confirmError}</p>}
+      </ConfirmDialog>}
       <div className="agent-library-layout">
         <div className="agent-library-list">
           {agents.length === 0 ? (
@@ -160,12 +229,7 @@ export default function AgentLibrary() {
                   </button>
                   <button
                     disabled={!!busy}
-                    onClick={() =>
-                      void run(agent.id, async () => {
-                        if (await api!.uninstall(agent.id))
-                          if (selected === agent.id) setSelected(undefined);
-                      })
-                    }
+                    onClick={() => { setConfirmError(""); setUninstallTarget(agent); }}
                   >
                     卸载
                   </button>

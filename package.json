@@ -28,7 +28,7 @@
     "dist:mac": "npm run build:all && electron-builder --mac --publish=never --config electron-builder.yml",
     "test:upload": "npm run build:electron:dev && node --test tests/upload.test.mjs",
     "test:upload:python": "npm run build:electron:dev && cross-env SEVEN_UPLOAD_SERVER=python node --test tests/upload.test.mjs",
-    "test:agent": "npm run build:electron:dev && node --test tests/agent.test.mjs",
+    "test:agent": "npm run build:electron:dev && node --test tests/agent.test.mjs tests/agent-install-manager.test.mjs",
     "agent:example": "node scripts/agent-fixture.mjs"
   },
   "devDependencies": {

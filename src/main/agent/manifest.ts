@@ -22,7 +22,7 @@ const override = z.object({
 });
 const schema = z.object({
   manifest_version: z.enum(["0.1", "0.2", "0.3"]).optional(),
-  dxt_version: z.literal("0.1").optional(),
+  dxt_version: z.enum(["0.1", "0.2", "0.3"]).optional(),
   name: z.string().min(1).max(128),
   display_name: z.string().max(256).optional(),
   version: z.string().refine((value) => !!semver.valid(value)),
@@ -67,11 +67,19 @@ export function relativeFile(value: string) {
   return value;
 }
 export function parseManifest(value: unknown): AgentManifest {
-  const parsed = schema.parse(value);
+  const result = schema.safeParse(value);
+  if (!result.success) {
+    throw new Error(`安装包清单无效：${result.error.issues.map((issue) =>
+      `${issue.path.join(".") || "manifest.json"}：${issue.path[0] === "dxt_version" || issue.path[0] === "manifest_version"
+        ? "支持的版本为 0.1、0.2、0.3" : issue.message}`).join("；")}`);
+  }
+  const parsed = result.data;
   if (!parsed.manifest_version && !parsed.dxt_version)
     throw new Error(
-      "缺少 manifest_version / dxt_version；支持 MCPB 0.1–0.3 和 DXT 0.1",
+      "缺少 manifest_version / dxt_version；支持 0.1、0.2、0.3",
     );
+  if (parsed.manifest_version && parsed.dxt_version && parsed.manifest_version !== parsed.dxt_version)
+    throw new Error("manifest_version 与 dxt_version 不一致，请修正安装包清单");
   relativeFile(parsed.server.entry_point);
   if (
     parsed.compatibility?.platforms &&

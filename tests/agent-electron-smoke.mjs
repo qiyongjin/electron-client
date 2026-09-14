@@ -35,10 +35,7 @@ async function main() {
       canceled: false,
       filePaths: [archive],
     });
-    dialog.showMessageBox = async () => ({
-      response: 1,
-      checkboxChecked: false,
-    });
+    dialog.showMessageBox = async () => { throw new Error("Agent confirmation must use a client component"); };
     const win = new BrowserWindow({
       width: 1180,
       height: 880,
@@ -53,10 +50,11 @@ async function main() {
       hash: "/agent",
     });
     const evaluate = (code) => win.webContents.executeJavaScript(code);
-    const installed = await evaluate("window.electronAPI.agent.install()");
+    const install = () => evaluate("(async () => { const source = await window.electronAPI.agent.choosePackage(); return window.electronAPI.agent.install(source.id); })()");
+    const installed = await install();
     assert.equal(installed.state, "stopped");
     await assert.rejects(
-      evaluate("window.electronAPI.agent.install()"),
+      install(),
       /已安装/,
     );
     await evaluate(
@@ -120,7 +118,7 @@ async function main() {
       (await readdir(path.join(directory, "userData/seven_app/agents"))).length,
       0,
     );
-    const finalAgent = await evaluate("window.electronAPI.agent.install()");
+    const finalAgent = await install();
     await evaluate(
       `window.electronAPI.agent.start(${JSON.stringify(finalAgent.id)})`,
     );

@@ -96,7 +96,15 @@ const upload = {
 } satisfies UploadAPI;
 
 const agent = {
-  install: () => invoke('agent:install'),
+  choosePackage: () => invoke('agent:choose-package'),
+  install: id => invoke('agent:install', id),
+  cancelInstall: id => invoke('agent:cancel-install', id),
+  getInstallProgress: () => invoke('agent:install-progress'),
+  onInstallProgress: callback => {
+    const listener = (_event: Electron.IpcRendererEvent, progress: Parameters<typeof callback>[0]) => callback(progress);
+    ipcRenderer.on('agent:install-progress', listener);
+    return () => ipcRenderer.removeListener('agent:install-progress', listener);
+  },
   list: () => invoke('agent:list'),
   start: id => invoke('agent:start', id),
   stop: id => invoke('agent:stop', id),

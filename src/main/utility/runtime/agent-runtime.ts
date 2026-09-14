@@ -26,6 +26,8 @@ export class AgentRuntime {
   >();
   private stopping = false;
   private secrets: string[] = [];
+  private stdoutNoiseBytes = 0;
+  private stdoutNotice = false;
   constructor(private event: (value: unknown) => void) {}
   private redact(message: string) {
     for (const secret of this.secrets)
@@ -41,6 +43,9 @@ export class AgentRuntime {
     pythonExecutable: string;
   }) {
     if (this.child) throw new Error("Agent 已启动");
+    this.stopping = false;
+    this.stdoutNoiseBytes = 0;
+    this.stdoutNotice = false;
     this.secrets = Object.entries(options.manifest.user_config ?? {})
       .filter(([, field]) => field.sensitive)
       .flatMap(([key]) => {
@@ -90,12 +95,14 @@ export class AgentRuntime {
           `需要 Node ${range}，内置版本 ${process.versions.node}`,
         );
     } else if (type === "python") {
+      env.PYTHONUNBUFFERED = "1";
+      env.PYTHONIOENCODING = "utf-8";
       if (["python", "python3"].includes(command))
         command = options.pythonExecutable;
       const { stdout, stderr } = await promisify(execFile)(
         command,
         ["--version"],
-        { timeout: 5000, env },
+        { timeout: 5000, env, windowsHide: true },
       );
       const version = semver.coerce(stdout + stderr);
       const range = options.manifest.compatibility?.runtimes?.python;
@@ -217,13 +224,21 @@ export class AgentRuntime {
     let message: any;
     try {
       message = JSON.parse(line);
-      if (!message || message.jsonrpc !== "2.0") throw new Error();
     } catch {
-      this.fail(
-        new Error("Agent stdout 必须是 MCP JSON-RPC，日志请写入 stderr"),
-      );
+      if (/"jsonrpc"\s*:/.test(line)) this.fail(new Error("Agent 返回了损坏的 MCP JSON-RPC 消息"));
+      else this.stdoutLog(line);
       return;
     }
+    if (!message || typeof message !== "object" || Array.isArray(message) || !("jsonrpc" in message)) {
+      this.stdoutLog(line);
+      return;
+    }
+    if (message.jsonrpc !== "2.0" || (typeof message.method !== "string"
+      && !("id" in message && (("result" in message) !== ("error" in message))))) {
+      this.fail(new Error("Agent 返回了无效的 MCP JSON-RPC 消息"));
+      return;
+    }
+    this.stdoutNoiseBytes = 0;
     if (message.method) {
       if (message.id !== undefined) {
         try {
@@ -252,6 +267,20 @@ export class AgentRuntime {
         new Error(this.redact(String(message.error.message ?? "MCP 请求失败"))),
       );
     else pending.resolve(message.result);
+  }
+  private stdoutLog(line: string) {
+    // Some existing bundles print a startup banner to stdout. Keep it out of RPC dispatch,
+    // but still require a real initialize response and bound output between protocol messages.
+    this.stdoutNoiseBytes += Buffer.byteLength(line, "utf8");
+    if (this.stdoutNoiseBytes > 64 * 1024) {
+      this.fail(new Error("Agent 连续输出过多非协议内容，请将日志写入 stderr，并检查是否使用 stdio 启动"));
+      return;
+    }
+    if (!this.stdoutNotice) {
+      this.stdoutNotice = true;
+      this.event({ type: "log", level: "warn", message: "检测到 stdout 日志，已兼容分离；建议安装包将日志写入 stderr。" });
+    }
+    this.event({ type: "log", level: "warn", message: `[stdout] ${this.redact(line).slice(0, 2048)}` });
   }
   private rejectAll(error: Error) {
     for (const request of this.pending.values()) {

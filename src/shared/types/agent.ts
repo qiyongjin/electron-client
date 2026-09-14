@@ -64,7 +64,11 @@ export interface AgentLog {
   message: string;
 }
 export interface AgentAPI {
-  install: () => Promise<InstalledAgent | null>;
+  choosePackage: () => Promise<AgentInstallSource | null>;
+  install: (sourceId: string) => Promise<InstalledAgent | null>;
+  cancelInstall: (taskId: string) => Promise<boolean>;
+  getInstallProgress: () => Promise<AgentInstallProgress | null>;
+  onInstallProgress: (callback: (progress: AgentInstallProgress) => void) => () => void;
   list: () => Promise<InstalledAgent[]>;
   start: (id: string) => Promise<void>;
   stop: (id: string) => Promise<void>;
@@ -81,4 +85,30 @@ export interface AgentAPI {
   ) => Promise<unknown>;
   logs: (id: string) => Promise<AgentLog[]>;
   onChanged: (callback: (agents: InstalledAgent[]) => void) => () => void;
+}
+
+export interface AgentInstallSource {
+  id: string;
+  name: string;
+  size: number;
+}
+export type AgentInstallPhase = "preparing" | "hashing" | "extracting" | "validating"
+  | "committing" | "cancelling" | "completed" | "cancelled" | "failed";
+export interface AgentExtractionProgress {
+  phase: "hashing" | "extracting" | "validating";
+  percent: number;
+  message: string;
+  currentFile?: string;
+  processedBytes?: number;
+  totalBytes?: number;
+  processedEntries?: number;
+  totalEntries?: number;
+}
+export interface AgentInstallProgress extends Omit<AgentExtractionProgress, "phase"> {
+  id: string;
+  fileName: string;
+  phase: AgentInstallPhase;
+  cancellable: boolean;
+  agentId?: string;
+  error?: string;
 }

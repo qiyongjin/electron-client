@@ -25,7 +25,9 @@ test('one electronAPI namespace exposes only fixed business channels and forward
   assert.deepEqual(Object.keys(apis).sort(), ['app','clipboard','dialog','display','file','sevenapp','theme','upload','agent','windowControls'].sort());
   assert(!apis.electronAPI); assert(!apis.screen); assert(!apis.window);
   const cases = [
-    ['agent','install','agent:install',[]], ['agent','list','agent:list',[]],
+    ['agent','install','agent:install',['source-id']], ['agent','list','agent:list',[]],
+    ['agent','choosePackage','agent:choose-package',[]], ['agent','cancelInstall','agent:cancel-install',['task-id']],
+    ['agent','getInstallProgress','agent:install-progress',[]],
     ['agent','start','agent:start',['id']], ['agent','stop','agent:stop',['id']], ['agent','uninstall','agent:uninstall',['id']],
     ['agent','getConfig','agent:get-config',['id']], ['agent','saveConfig','agent:save-config',['id',{}]],
     ['agent','listTools','agent:tools',['id']], ['agent','callTool','agent:call-tool',['id','echo',{text:'hello'}]], ['agent','logs','agent:logs',['id']],
@@ -51,7 +53,7 @@ test('one electronAPI namespace exposes only fixed business channels and forward
     assert.equal(await apis[group][method](...args), result);
     assert.deepEqual(calls.at(-1), [channel,...args]);
   }
-  assert.equal(cases.length + 3, Object.values(apis).reduce((sum, api) => sum + Object.keys(api).length, 0));
+  assert.equal(cases.length + 4, Object.values(apis).reduce((sum, api) => sum + Object.keys(api).length, 0));
 });
 
 test('subscriptions hide IPC events and unsubscribe only their own listener', () => {
@@ -117,4 +119,20 @@ test('agent subscriptions hide Electron events and release only their listener',
   events.emit('agent:changed',{sender:'private'},payload);
   assert.deepEqual(values,[[payload]]); off(); off();
   assert.equal(events.listenerCount('agent:changed'),0);
+});
+
+test('installation progress subscriptions hide IPC events and detach independently', () => {
+  const { apis, events } = preload();
+  const first = [], second = [];
+  const stop = apis.agent.onInstallProgress((...args) => first.push(args));
+  const stopOther = apis.agent.onInstallProgress((...args) => second.push(args));
+  const progress = { id: 'task', phase: 'extracting', percent: 45, processedEntries: 10, totalEntries: 30 };
+  events.emit('agent:install-progress', { sender: 'private' }, progress);
+  assert.deepEqual(first, [[progress]]);
+  stop(); stop();
+  events.emit('agent:install-progress', {}, { ...progress, phase: 'cancelled' });
+  assert.equal(first.length, 1);
+  assert.equal(second.length, 2);
+  stopOther();
+  assert.equal(events.listenerCount('agent:install-progress'), 0);
 });
